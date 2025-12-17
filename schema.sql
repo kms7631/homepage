@@ -1,0 +1,142 @@
+-- 발주·재고·입고 통합 관리 시스템
+-- MySQL 8.0
+
+SET NAMES utf8mb4;
+SET time_zone = '+00:00';
+
+DROP TABLE IF EXISTS receipt_items;
+DROP TABLE IF EXISTS receipts;
+DROP TABLE IF EXISTS purchase_order_items;
+DROP TABLE IF EXISTS purchase_orders;
+DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS suppliers;
+
+CREATE TABLE suppliers (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(150) NOT NULL,
+  contact_name VARCHAR(100) NULL,
+  phone VARCHAR(50) NULL,
+  email VARCHAR(190) NULL,
+  notes TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_suppliers_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE users (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  email VARCHAR(190) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  role ENUM('admin','user') NOT NULL DEFAULT 'user',
+  supplier_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_email (email),
+  KEY idx_users_supplier (supplier_id),
+  CONSTRAINT fk_users_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  sku VARCHAR(50) NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  supplier_id BIGINT UNSIGNED NULL,
+  unit VARCHAR(20) NOT NULL DEFAULT 'EA',
+  min_stock INT NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_items_sku (sku),
+  KEY idx_items_name (name),
+  KEY idx_items_supplier (supplier_id),
+  CONSTRAINT fk_items_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE inventory (
+  item_id BIGINT UNSIGNED NOT NULL,
+  on_hand INT NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (item_id),
+  CONSTRAINT fk_inventory_item FOREIGN KEY (item_id) REFERENCES items(id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE purchase_orders (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  po_no VARCHAR(30) NOT NULL,
+  supplier_id BIGINT UNSIGNED NOT NULL,
+  ordered_by BIGINT UNSIGNED NOT NULL,
+  status ENUM('OPEN','RECEIVED','CANCELLED') NOT NULL DEFAULT 'OPEN',
+  order_date DATE NOT NULL,
+  notes TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_po_no (po_no),
+  KEY idx_po_supplier_date (supplier_id, order_date),
+  KEY idx_po_ordered_by (ordered_by),
+  CONSTRAINT fk_po_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_po_user FOREIGN KEY (ordered_by) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE purchase_order_items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  purchase_order_id BIGINT UNSIGNED NOT NULL,
+  item_id BIGINT UNSIGNED NOT NULL,
+  qty INT NOT NULL,
+  unit_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_poi_po_item (purchase_order_id, item_id),
+  KEY idx_poi_item (item_id),
+  CONSTRAINT fk_poi_po FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_poi_item FOREIGN KEY (item_id) REFERENCES items(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE receipts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  receipt_no VARCHAR(30) NOT NULL,
+  purchase_order_id BIGINT UNSIGNED NULL,
+  supplier_id BIGINT UNSIGNED NOT NULL,
+  received_by BIGINT UNSIGNED NOT NULL,
+  receipt_date DATE NOT NULL,
+  notes TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_receipt_no (receipt_no),
+  KEY idx_receipts_supplier_date (supplier_id, receipt_date),
+  KEY idx_receipts_po (purchase_order_id),
+  CONSTRAINT fk_receipts_po FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT fk_receipts_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_receipts_user FOREIGN KEY (received_by) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE receipt_items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  receipt_id BIGINT UNSIGNED NOT NULL,
+  item_id BIGINT UNSIGNED NOT NULL,
+  qty_received INT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ri_receipt_item (receipt_id, item_id),
+  KEY idx_ri_item (item_id),
+  CONSTRAINT fk_ri_receipt FOREIGN KEY (receipt_id) REFERENCES receipts(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_ri_item FOREIGN KEY (item_id) REFERENCES items(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,18 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Logs
+*.log
+
+# Env files (do not commit secrets)
+.env
+.env.*
+
+# PHP
+/vendor/
+
+# Runtime/session/cache (if any get added later)
+/tmp/
+/cache/
