@@ -38,7 +38,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="card">
-  <h1 class="h1">관리자 · 사용자</h1>
+  <h1 class="h1">사용자 관리</h1>
   <div class="small">권한(role)은 초기 데이터(seed) 기준으로 제공합니다.</div>
 
   <div style="margin-top:12px"></div>
@@ -49,6 +49,7 @@ require_once __DIR__ . '/../includes/header.php';
         <th>ID</th>
         <th>이메일</th>
         <th>이름</th>
+        <th>연락처</th>
         <th>거래처</th>
         <th>권한</th>
         <th>생성일</th>
@@ -61,6 +62,7 @@ require_once __DIR__ . '/../includes/header.php';
           <td><?= e((string)$u['id']) ?></td>
           <td><?= e($u['email']) ?></td>
           <td><?= e($u['name']) ?></td>
+          <td><?= e(($u['phone'] ?? '') ?: '-') ?></td>
           <td><?= e($u['supplier_name'] ?: '-') ?></td>
           <td><span class="badge"><?= e($u['role']) ?></span></td>
           <td><?= e($u['created_at']) ?></td>

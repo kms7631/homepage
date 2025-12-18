@@ -89,7 +89,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="grid">
   <div class="col-12">
     <div class="card">
-      <h1 class="h1">관리자 · 품목</h1>
+      <h1 class="h1">품목관리</h1>
       <div class="small">품목 추가 시 inventory에 0으로 초기화됩니다.</div>
       <div style="margin-top:10px"></div>
       <table class="table">

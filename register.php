@@ -7,8 +7,19 @@ if (is_logged_in()) {
 
 $email = '';
 $name = '';
+$phone = '';
+$phone1 = '';
+$phone2 = '';
+$phone3 = '';
 $supplierId = 0;
 $newSupplierName = '';
+
+if ($phone !== '') {
+  $digits = preg_replace('/\D+/', '', $phone);
+  $phone1 = substr($digits, 0, 3) ?: '';
+  $phone2 = substr($digits, 3, 4) ?: '';
+  $phone3 = substr($digits, 7, 4) ?: '';
+}
 
 try {
   $db = db();
@@ -20,10 +31,26 @@ try {
 if (is_post()) {
   $email = trim((string)($_POST['email'] ?? ''));
   $name = trim((string)($_POST['name'] ?? ''));
+  $phone1 = trim((string)($_POST['phone1'] ?? ''));
+  $phone2 = trim((string)($_POST['phone2'] ?? ''));
+  $phone3 = trim((string)($_POST['phone3'] ?? ''));
+  $digits1 = preg_replace('/\D+/', '', $phone1);
+  $digits2 = preg_replace('/\D+/', '', $phone2);
+  $digits3 = preg_replace('/\D+/', '', $phone3);
+  if ($digits1 !== '' || $digits2 !== '' || $digits3 !== '') {
+    $phone = $digits1 . '-' . $digits2 . '-' . $digits3;
+  } else {
+    $phone = '';
+  }
   $supplierId = (int)($_POST['supplier_id'] ?? 0);
   $newSupplierName = trim((string)($_POST['new_supplier_name'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
   $password2 = (string)($_POST['password2'] ?? '');
+
+  // 재렌더 시 값 유지
+  $phone1 = $digits1;
+  $phone2 = $digits2;
+  $phone3 = $digits3;
 
   if ($email === '' || $name === '' || $password === '') {
     flash_set('error', '필수 항목을 입력하세요.');
@@ -50,7 +77,7 @@ if (is_post()) {
             $createdNewSupplier = true;
           }
 
-          $userId = User::createWithSupplier($db, $email, $name, $password, $finalSupplierId);
+          $userId = User::createWithSupplier($db, $email, $name, $password, $finalSupplierId, $phone);
           $db->commit();
         } catch (Throwable $e) {
           $db->rollBack();
@@ -75,8 +102,8 @@ if (is_post()) {
       // 자주 나오는 케이스를 사용자 친화적으로 분기
       if (stripos($msg, 'Access denied') !== false) {
         flash_set('error', 'DB 인증 실패입니다. includes/config.php의 DB_USER/DB_PASS가 실제 MySQL 계정과 일치하는지 확인하세요.');
-      } elseif (stripos($msg, 'Unknown column') !== false || stripos($msg, 'supplier_id') !== false) {
-        flash_set('error', 'DB 스키마가 최신이 아닙니다. migrate_add_supplier_id.sql(또는 schema.sql 재적용)을 먼저 실행하세요.');
+      } elseif (stripos($msg, 'Unknown column') !== false || stripos($msg, 'supplier_id') !== false || stripos($msg, 'phone') !== false) {
+        flash_set('error', 'DB 스키마가 최신이 아닙니다. migrate_add_supplier_id.sql / migrate_add_user_phone.sql(또는 schema.sql 재적용)을 먼저 실행하세요.');
       } elseif (stripos($msg, 'Unknown database') !== false) {
         flash_set('error', 'DB_NAME이 존재하지 않습니다. MySQL에서 DB 생성 후 includes/config.php의 DB_NAME을 확인하세요.');
       } else {
@@ -103,6 +130,16 @@ require_once __DIR__ . '/includes/header.php';
       <div class="field">
         <div class="label">이름</div>
         <input class="input" type="text" name="name" value="<?= e($name) ?>" required />
+      </div>
+      <div class="field">
+        <div class="label">연락처(선택)</div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <input class="input" type="text" name="phone1" value="<?= e($phone1) ?>" inputmode="numeric" autocomplete="tel-area-code" maxlength="3" style="width:72px" placeholder="010" />
+          <span class="muted">-</span>
+          <input class="input" type="text" name="phone2" value="<?= e($phone2) ?>" inputmode="numeric" autocomplete="tel-local-prefix" maxlength="4" style="width:88px" placeholder="1234" />
+          <span class="muted">-</span>
+          <input class="input" type="text" name="phone3" value="<?= e($phone3) ?>" inputmode="numeric" autocomplete="tel-local-suffix" maxlength="4" style="width:88px" placeholder="5678" />
+        </div>
       </div>
       <div class="field">
         <div class="label">비밀번호</div>
@@ -138,5 +175,70 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </form>
 </div>
+
+<script>
+  (function () {
+    function onlyDigits(s) {
+      return (s || '').replace(/\D+/g, '');
+    }
+
+    function setupPhoneSplit() {
+      var a = document.querySelector('input[name="phone1"]');
+      var b = document.querySelector('input[name="phone2"]');
+      var c = document.querySelector('input[name="phone3"]');
+      if (!a || !b || !c) return;
+
+      var maxA = 3, maxB = 4, maxC = 4;
+      var inputs = [a, b, c];
+      var maxes = [maxA, maxB, maxC];
+
+      function normalize(el) {
+        var v = onlyDigits(el.value);
+        if (el.name === 'phone1') v = v.slice(0, maxA);
+        if (el.name === 'phone2') v = v.slice(0, maxB);
+        if (el.name === 'phone3') v = v.slice(0, maxC);
+        if (el.value !== v) el.value = v;
+      }
+
+      function maybeAdvance(idx) {
+        if (idx < 0 || idx >= inputs.length) return;
+        var el = inputs[idx];
+        var max = maxes[idx];
+        if (onlyDigits(el.value).length >= max && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
+          inputs[idx + 1].select();
+        }
+      }
+
+      function maybeBack(idx, e) {
+        if (e.key !== 'Backspace') return;
+        var el = inputs[idx];
+        if (el.value !== '') return;
+        if (idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      }
+
+      inputs.forEach(function (el, idx) {
+        el.addEventListener('input', function () {
+          normalize(el);
+          maybeAdvance(idx);
+        });
+        el.addEventListener('keydown', function (e) {
+          maybeBack(idx, e);
+        });
+        el.addEventListener('paste', function () {
+          // 붙여넣기 후 정리/이동
+          setTimeout(function () {
+            normalize(el);
+            maybeAdvance(idx);
+          }, 0);
+        });
+      });
+    }
+
+    setupPhoneSplit();
+  })();
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

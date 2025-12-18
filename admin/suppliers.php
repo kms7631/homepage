@@ -67,46 +67,38 @@ if (is_post()) {
 
 $suppliers = Supplier::listAll($db);
 
+// 거래처별 사용자 목록(한 번에 조회해서 그룹핑)
+$supplierUsers = [];
+try {
+  try {
+    $stUsers = $db->query("SELECT id, email, name, phone, role, supplier_id FROM users WHERE supplier_id IS NOT NULL ORDER BY supplier_id ASC, id ASC");
+    $rows = $stUsers->fetchAll();
+  } catch (PDOException $e) {
+    // 구버전 스키마(users.phone 없음) 호환
+    $stUsers = $db->query("SELECT id, email, name, role, supplier_id FROM users WHERE supplier_id IS NOT NULL ORDER BY supplier_id ASC, id ASC");
+    $rows = $stUsers->fetchAll();
+    foreach ($rows as &$r) {
+      $r['phone'] = null;
+    }
+    unset($r);
+  }
+  foreach ($rows as $u) {
+    $sid = (int)($u['supplier_id'] ?? 0);
+    if ($sid <= 0) continue;
+    if (!isset($supplierUsers[$sid])) {
+      $supplierUsers[$sid] = [];
+    }
+    $supplierUsers[$sid][] = $u;
+  }
+} catch (Throwable $e) {
+  $supplierUsers = [];
+}
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="grid">
-  <div class="col-6">
-    <div class="card">
-      <h1 class="h1">관리자 · 거래처</h1>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>거래처</th>
-            <th>담당</th>
-            <th>연락처</th>
-            <th>이메일</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($suppliers as $sp): ?>
-            <tr>
-              <td><?= e($sp['name']) ?></td>
-              <td><?= e($sp['contact_name'] ?: '-') ?></td>
-              <td><?= e($sp['phone'] ?: '-') ?></td>
-              <td><?= e($sp['email'] ?: '-') ?></td>
-              <td style="white-space:nowrap">
-                <a class="btn secondary" href="<?= e(url('/admin/suppliers.php?edit_id=' . (int)$sp['id'])) ?>">수정</a>
-                <form method="post" action="<?= e(url('/admin/suppliers.php')) ?>" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
-                  <input type="hidden" name="action" value="delete" />
-                  <input type="hidden" name="id" value="<?= e((string)$sp['id']) ?>" />
-                  <button class="btn secondary" type="submit">삭제</button>
-                </form>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="col-6">
+  <div class="col-12">
     <div class="card">
       <h1 class="h1"><?= $editSupplier ? '거래처 수정' : '거래처 추가' ?></h1>
       <form method="post" action="<?= e(url('/admin/suppliers.php')) ?>">
@@ -150,6 +142,106 @@ require_once __DIR__ . '/../includes/header.php';
       </form>
     </div>
   </div>
+
+  <div class="col-12">
+    <div class="card">
+      <h1 class="h1">거래처 정보</h1>
+      <div class="table-scroll">
+      <table class="table nowrap">
+        <thead>
+          <tr>
+            <th>거래처</th>
+            <th>담당/사용자</th>
+            <th>연락처</th>
+            <th>이메일</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($suppliers as $sp): ?>
+            <?php
+              $spId = (int)$sp['id'];
+              $users = $supplierUsers[$spId] ?? [];
+              $groupId = 'supusers-' . $spId;
+            ?>
+            <tr>
+              <td>
+                <?php if ($users): ?>
+                  <button
+                    type="button"
+                    class="table-toggle"
+                    data-toggle-group="<?= e($groupId) ?>"
+                    aria-expanded="false"
+                  >
+                    <span class="table-toggle-label"><?= e($sp['name']) ?></span>
+                    <span class="badge" style="margin-left:8px">사용자 <?= e((string)count($users)) ?></span>
+                    <span class="table-toggle-chevron" aria-hidden="true"></span>
+                  </button>
+                <?php else: ?>
+                  <?= e($sp['name']) ?>
+                <?php endif; ?>
+              </td>
+              <td><?= e($sp['contact_name'] ?: '-') ?></td>
+              <td><?= e($sp['phone'] ?: '-') ?></td>
+              <td><?= e($sp['email'] ?: '-') ?></td>
+              <td style="white-space:nowrap">
+                <a class="btn secondary" href="<?= e(url('/admin/suppliers.php?edit_id=' . (int)$sp['id'])) ?>">수정</a>
+                <form method="post" action="<?= e(url('/admin/suppliers.php')) ?>" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?')">
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="id" value="<?= e((string)$sp['id']) ?>" />
+                  <button class="btn secondary" type="submit">삭제</button>
+                </form>
+              </td>
+            </tr>
+
+            <?php if ($users): ?>
+              <?php foreach ($users as $u): ?>
+                <tr class="child-row" data-group="<?= e($groupId) ?>" hidden>
+                  <td class="child-first"></td>
+                  <td>
+                    <?= e($u['name']) ?>
+                    <span class="badge" style="margin-left:6px"><?= e($u['role']) ?></span>
+                  </td>
+                  <td><?= e(((string)($u['phone'] ?? '')) ?: '-') ?></td>
+                  <td><?= e($u['email']) ?></td>
+                  <td></td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  (function () {
+    function setGroupVisible(groupId, visible) {
+      var rows = document.querySelectorAll('tr.child-row[data-group="' + groupId + '"]');
+      for (var i = 0; i < rows.length; i++) {
+        if (visible) {
+          rows[i].removeAttribute('hidden');
+        } else {
+          rows[i].setAttribute('hidden', 'hidden');
+        }
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('[data-toggle-group]') : null;
+      if (!btn) return;
+
+      var groupId = btn.getAttribute('data-toggle-group');
+      if (!groupId) return;
+
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      var next = !expanded;
+      btn.setAttribute('aria-expanded', next ? 'true' : 'false');
+      setGroupVisible(groupId, next);
+    });
+  })();
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

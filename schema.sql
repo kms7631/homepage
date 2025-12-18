@@ -31,6 +31,7 @@ CREATE TABLE users (
   email VARCHAR(190) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(100) NOT NULL,
+  phone VARCHAR(50) NULL,
   role ENUM('admin','user') NOT NULL DEFAULT 'user',
   supplier_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

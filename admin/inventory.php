@@ -25,7 +25,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="card">
-  <h1 class="h1">관리자 · 재고</h1>
+  <h1 class="h1">재고관리</h1>
   <div class="muted">운영 편의를 위해 재고를 직접 수정할 수 있습니다.</div>
 
   <div style="margin-top:12px"></div>
