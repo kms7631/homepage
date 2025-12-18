@@ -168,10 +168,11 @@ require_once __DIR__ . '/includes/header.php';
         <input class="input" type="text" name="new_supplier_name" value="<?= e($newSupplierName) ?>" placeholder="예: (주)샘플상사" />
         <div class="small muted" style="margin-top:6px">신규 거래처 생성 후, 부족 품목을 직접 등록합니다.</div>
       </div>
+    </div>
 
-      <div class="field">
-        <button class="btn" type="submit">가입</button>
-      </div>
+    <div style="margin-top:14px; display:flex; justify-content:center; gap:10px">
+      <button class="btn secondary" type="button" onclick="location.href='<?= e(url('/login.php')) ?>'" style="width:120px">가입 취소</button>
+      <button class="btn" type="submit" style="width:120px">가입</button>
     </div>
   </form>
 </div>

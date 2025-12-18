@@ -11,6 +11,11 @@ if (defined('APP_BASE') && APP_BASE !== '') {
 function nav_active(string $needle, string $path): string {
   return starts_with($path, $needle) ? 'active' : '';
 }
+
+$isAuthPage = (!$me && $path === '/login.php');
+if (!defined('LAYOUT_AUTH_PAGE')) {
+  define('LAYOUT_AUTH_PAGE', $isAuthPage);
+}
 ?><!doctype html>
 <html lang="ko">
 <head>
@@ -20,19 +25,21 @@ function nav_active(string $needle, string $path): string {
   <link rel="stylesheet" href="<?= e(url('/assets/app.css')) ?>" />
 </head>
 <body>
-  <div class="topbar">
-    <div class="brand"><a class="brand" href="<?= e(url('/index.php')) ?>"><?= e(APP_NAME) ?></a></div>
-    <div class="nav">
-      <a class="<?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
-      <a class="<?= e(nav_active('/items.php', $path)) ?>" href="<?= e(url('/items.php')) ?>">품목</a>
-      <a class="<?= e(nav_active('/po', $path)) ?>" href="<?= e(url('/po_list.php')) ?>">발주</a>
-      <a class="<?= e(nav_active('/receipt', $path)) ?>" href="<?= e(url('/receipt_list.php')) ?>">입고</a>
-      <?php if (!$me): ?>
-        <a class="<?= e(nav_active('/login.php', $path)) ?>" href="<?= e(url('/login.php')) ?>">로그인</a>
-        <a class="<?= e(nav_active('/register.php', $path)) ?>" href="<?= e(url('/register.php')) ?>">회원가입</a>
-      <?php endif; ?>
+  <?php if (!$isAuthPage): ?>
+    <div class="topbar">
+      <div class="brand"><a class="brand" href="<?= e(url('/index.php')) ?>"><?= e(APP_NAME) ?></a></div>
+      <div class="nav">
+        <a class="<?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
+        <a class="<?= e(nav_active('/items.php', $path)) ?>" href="<?= e(url('/items.php')) ?>">품목</a>
+        <a class="<?= e(nav_active('/po', $path)) ?>" href="<?= e(url('/po_list.php')) ?>">발주</a>
+        <a class="<?= e(nav_active('/receipt', $path)) ?>" href="<?= e(url('/receipt_list.php')) ?>">입고</a>
+        <?php if (!$me): ?>
+          <a class="<?= e(nav_active('/login.php', $path)) ?>" href="<?= e(url('/login.php')) ?>">로그인</a>
+          <a class="<?= e(nav_active('/register.php', $path)) ?>" href="<?= e(url('/register.php')) ?>">회원가입</a>
+        <?php endif; ?>
+      </div>
     </div>
-  </div>
+  <?php endif; ?>
 
   <?php if ($me): ?>
     <div class="layout">
@@ -56,12 +63,7 @@ function nav_active(string $needle, string $path): string {
         </div>
 
         <div class="sidebar-card sidebar-tree">
-          <details class="tree-group" open>
-            <summary class="tree-summary">목록</summary>
-            <div class="tree-items">
-              <a class="tree-link <?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
-            </div>
-          </details>
+          <a class="tree-link <?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
 
           <details class="tree-group" open>
             <summary class="tree-summary">품목</summary>
@@ -114,10 +116,18 @@ function nav_active(string $needle, string $path): string {
             </div>
           <?php endif; ?>
   <?php else: ?>
-    <div class="container">
+    <?php if ($isAuthPage): ?>
       <?php $flash = flash_get(); if ($flash): ?>
-        <div class="flash <?= e($flash['type']) ?>">
+        <div class="auth-flash flash <?= e($flash['type']) ?>">
           <?= e($flash['message']) ?>
         </div>
       <?php endif; ?>
+    <?php else: ?>
+      <div class="container">
+        <?php $flash = flash_get(); if ($flash): ?>
+          <div class="flash <?= e($flash['type']) ?>">
+            <?= e($flash['message']) ?>
+          </div>
+        <?php endif; ?>
+    <?php endif; ?>
   <?php endif; ?>

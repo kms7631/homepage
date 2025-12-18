@@ -32,38 +32,25 @@ if (is_post()) {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="grid">
-  <div class="col-6">
-    <div class="card">
-      <h1 class="h1">로그인</h1>
-      <form method="post" action="<?= e(url('/login.php')) ?>">
-        <div class="form-row">
-          <div class="field">
-            <div class="label">이메일</div>
-            <input class="input" type="email" name="email" value="<?= e($email) ?>" required />
-          </div>
-          <div class="field">
-            <div class="label">비밀번호</div>
-            <input class="input" type="password" name="password" required />
-          </div>
-          <div class="field">
-            <button class="btn" type="submit">로그인</button>
-          </div>
-        </div>
-        <div class="small" style="margin-top:10px">
-          기본 관리자 계정: admin@example.com / password
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="col-6">
-    <div class="card">
-      <h1 class="h1">회원가입</h1>
-      <div style="margin-top:10px">
-        <a class="btn secondary" href="<?= e(url('/register.php')) ?>">회원가입으로 이동</a>
+<div class="auth-wrap">
+  <div class="auth-brand-outside"><?= e(APP_NAME) ?></div>
+  <div class="card auth-card">
+    <form method="post" action="<?= e(url('/login.php')) ?>" class="auth-form">
+      <div class="field">
+        <div class="label">이메일</div>
+        <input class="input" type="email" name="email" value="<?= e($email) ?>" placeholder="Email" required />
       </div>
-    </div>
+
+      <div class="field">
+        <div class="label">비밀번호</div>
+        <input class="input" type="password" name="password" required />
+        <div class="auth-right-link">
+          <a class="small" href="<?= e(url('/register.php')) ?>">회원가입</a>
+        </div>
+      </div>
+
+      <button class="btn" type="submit" style="width:100%">로그인</button>
+    </form>
   </div>
 </div>
 
