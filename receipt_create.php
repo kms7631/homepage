@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 require_supplier();
+require_once __DIR__ . '/includes/flatpickr_datepicker.php';
 
 $db = db();
 
@@ -39,6 +40,9 @@ if ($supplierId > 0) {
   $st->execute([$supplierId]);
   $poOptions = $st->fetchAll();
 }
+
+$extraHeadHtml = flatpickr_datepicker_head_html();
+$extraBodyEndHtml = flatpickr_datepicker_body_html('input.js-date');
 
 if (is_post()) {
   try {
@@ -132,7 +136,7 @@ require_once __DIR__ . '/includes/header.php';
       <div class="form-row">
         <div class="field">
           <div class="label">입고일</div>
-          <input class="input" type="date" name="receipt_date" value="<?= e($receiptDate) ?>" required />
+          <input class="input js-date" type="text" name="receipt_date" value="<?= e($receiptDate) ?>" placeholder="YYYY-MM-DD" autocomplete="off" required />
         </div>
         <div class="field" style="min-width:320px;flex:1">
           <div class="label">메모</div>

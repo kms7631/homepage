@@ -9,5 +9,8 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
       </main>
     </div>
   <?php endif; ?>
+  <?php if (isset($extraBodyEndHtml) && is_string($extraBodyEndHtml) && $extraBodyEndHtml !== ''): ?>
+    <?= $extraBodyEndHtml ?>
+  <?php endif; ?>
 </body>
 </html>

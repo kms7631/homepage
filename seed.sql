@@ -71,3 +71,9 @@ UPDATE inventory i
 JOIN items it ON it.id = i.item_id
 SET i.on_hand = i.on_hand + 30
 WHERE it.sku = 'PK-BOX-001';
+
+-- Sample Notices
+INSERT INTO notices (title, body, active)
+VALUES
+  ('시스템 안내', '공지사항 메뉴가 추가되었습니다.\n\n- 목록에서 제목을 클릭하면 상세를 볼 수 있습니다.\n- 필요 시 DB에 notices 레코드를 추가해 사용하세요.', 1),
+  ('점검 공지(예시)', '12/25(목) 02:00~03:00 시스템 점검이 예정되어 있습니다.\n점검 시간 동안 일부 기능이 제한될 수 있습니다.', 1);

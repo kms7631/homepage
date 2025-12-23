@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 require_supplier();
+require_once __DIR__ . '/includes/flatpickr_datepicker.php';
 
 $db = db();
 
@@ -83,6 +84,9 @@ $pos = PurchaseOrder::list($db, [
   'status' => $status,
 ]);
 
+$extraHeadHtml = flatpickr_datepicker_head_html();
+$extraBodyEndHtml = flatpickr_datepicker_body_html('input.js-date');
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -115,11 +119,11 @@ require_once __DIR__ . '/includes/header.php';
     <div class="form-row">
       <div class="field">
         <div class="label">기간(From)</div>
-        <input class="input" type="date" name="from" value="<?= e($from) ?>" />
+        <input class="input js-date" type="text" name="from" value="<?= e($from) ?>" placeholder="YYYY-MM-DD" autocomplete="off" />
       </div>
       <div class="field">
         <div class="label">기간(To)</div>
-        <input class="input" type="date" name="to" value="<?= e($to) ?>" />
+        <input class="input js-date" type="text" name="to" value="<?= e($to) ?>" placeholder="YYYY-MM-DD" autocomplete="off" />
       </div>
       <?php if (is_admin()): ?>
         <div class="field">

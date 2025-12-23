@@ -9,9 +9,12 @@ DROP TABLE IF EXISTS receipts;
 DROP TABLE IF EXISTS purchase_order_items;
 DROP TABLE IF EXISTS purchase_orders;
 DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS inquiry_messages;
+DROP TABLE IF EXISTS inquiries;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS suppliers;
+DROP TABLE IF EXISTS notices;
 
 CREATE TABLE suppliers (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -41,6 +44,42 @@ CREATE TABLE users (
   KEY idx_users_supplier (supplier_id),
   CONSTRAINT fk_users_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
     ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE inquiries (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  sender_id BIGINT UNSIGNED NOT NULL,
+  receiver_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  body TEXT NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inq_sender_created (sender_id, created_at),
+  KEY idx_inq_receiver_created (receiver_id, created_at),
+  KEY idx_inq_active_created (active, created_at),
+  CONSTRAINT fk_inquiries_sender FOREIGN KEY (sender_id) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_inquiries_receiver FOREIGN KEY (receiver_id) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE inquiry_messages (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  inquiry_id BIGINT UNSIGNED NOT NULL,
+  sender_id BIGINT UNSIGNED NOT NULL,
+  body TEXT NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inqm_inquiry_created (inquiry_id, created_at),
+  KEY idx_inqm_sender_created (sender_id, created_at),
+  CONSTRAINT fk_inqm_inquiry FOREIGN KEY (inquiry_id) REFERENCES inquiries(id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_inqm_sender FOREIGN KEY (sender_id) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE items (
@@ -140,4 +179,15 @@ CREATE TABLE receipt_items (
     ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT fk_ri_item FOREIGN KEY (item_id) REFERENCES items(id)
     ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE notices (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(200) NOT NULL,
+  body TEXT NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_notices_active_created (active, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

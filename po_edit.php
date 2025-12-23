@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 require_supplier();
+require_once __DIR__ . '/includes/flatpickr_datepicker.php';
 
 $id = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
 if ($id <= 0) {
@@ -74,6 +75,9 @@ if (is_post()) {
 $orderDate = (string)($po['order_date'] ?? date('Y-m-d'));
 $notes = (string)($po['notes'] ?? '');
 
+$extraHeadHtml = flatpickr_datepicker_head_html();
+$extraBodyEndHtml = flatpickr_datepicker_body_html('input.js-date');
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -102,7 +106,7 @@ require_once __DIR__ . '/includes/header.php';
     <div class="form-row">
       <div class="field">
         <div class="label">발주일</div>
-        <input class="input" type="date" name="order_date" value="<?= e($orderDate) ?>" required />
+        <input class="input js-date" type="text" name="order_date" value="<?= e($orderDate) ?>" placeholder="YYYY-MM-DD" autocomplete="off" required />
       </div>
       <div class="field" style="min-width:320px;flex:1">
         <div class="label">메모</div>

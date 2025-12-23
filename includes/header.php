@@ -23,6 +23,9 @@ if (!defined('LAYOUT_AUTH_PAGE')) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= e(APP_NAME) ?></title>
   <link rel="stylesheet" href="<?= e(url('/assets/app.css')) ?>" />
+  <?php if (isset($extraHeadHtml) && is_string($extraHeadHtml) && $extraHeadHtml !== ''): ?>
+    <?= $extraHeadHtml ?>
+  <?php endif; ?>
 </head>
 <body>
   <?php if (!$isAuthPage): ?>
@@ -64,6 +67,15 @@ if (!defined('LAYOUT_AUTH_PAGE')) {
 
         <div class="sidebar-card sidebar-tree">
           <a class="tree-link <?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
+          <a class="tree-link <?= e(nav_active('/notice', $path)) ?>" href="<?= e(url('/notice.php')) ?>">공지사항</a>
+
+          <details class="tree-group" open>
+            <summary class="tree-summary">1:1 문의</summary>
+            <div class="tree-items">
+              <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php?box=sent')) ?>">보낸 문의</a>
+              <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php?box=received')) ?>">받은 문의</a>
+            </div>
+          </details>
 
           <details class="tree-group" open>
             <summary class="tree-summary">품목</summary>
