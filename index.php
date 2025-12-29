@@ -97,7 +97,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="col-4">
     <div class="kpi-card warn">
       <div class="kpi-title">미처리 발주</div>
-      <div class="kpi-main"><?= e((string)$pendingPoCount) ?><span class="small" style="margin-left:6px;color:inherit">건</span></div>
+      <div class="kpi-main tight"><?= e((string)$pendingPoCount) ?><span class="kpi-unit">건</span></div>
     </div>
   </div>
 
@@ -111,7 +111,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="col-4">
     <div class="kpi-card danger">
       <div class="kpi-title">부족 품목</div>
-      <div class="kpi-main"><?= e((string)$lowStockCount) ?><span class="small" style="margin-left:6px;color:inherit">개</span></div>
+      <div class="kpi-main tight"><?= e((string)$lowStockCount) ?><span class="kpi-unit">개</span></div>
     </div>
   </div>
 
