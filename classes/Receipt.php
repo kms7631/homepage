@@ -40,10 +40,13 @@ final class Receipt {
         Inventory::adjust($db, $row['item_id'], $row['qty_received']);
       }
 
-      // 단순화: PO 연결 입고는 'RECEIVED'로 처리 (부분입고 관리 기능은 범위 밖)
+      // 단순화: PO 연결 입고는 완료 상태로 처리 (UI에서는 DONE으로 표시)
       if ($purchaseOrderId && $purchaseOrderId > 0) {
-        $stUp = $db->prepare("UPDATE purchase_orders SET status='RECEIVED' WHERE id = ?");
-        $stUp->execute([$purchaseOrderId]);
+        $stUp = $db->prepare("UPDATE purchase_orders SET status='RECEIVED' WHERE id = ? AND supplier_id = ? AND status='OPEN'");
+        $stUp->execute([$purchaseOrderId, $supplierId]);
+        if ($stUp->rowCount() !== 1) {
+          throw new RuntimeException('발주 상태가 OPEN이 아니거나 접근 권한이 없습니다.');
+        }
       }
 
       $db->commit();

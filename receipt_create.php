@@ -19,6 +19,10 @@ if ($purchaseOrderId > 0) {
   $po = PurchaseOrder::find($db, $purchaseOrderId);
   if ($po) {
     $supplierId = (int)$po['supplier_id'];
+    if ((string)($po['status'] ?? '') !== 'OPEN') {
+      flash_set('error', 'OPEN 상태의 발주만 입고 처리할 수 있습니다.');
+      redirect('/receipt_create.php' . ($supplierId > 0 ? ('?supplier_id=' . $supplierId) : ''));
+    }
     $items = $po['items'] ?? [];
   }
 }
@@ -36,7 +40,7 @@ if (!is_admin()) {
 // 선택용 PO 리스트(간단히 최근 50건)
 $poOptions = [];
 if ($supplierId > 0) {
-  $st = $db->prepare('SELECT id, po_no, status, order_date FROM purchase_orders WHERE supplier_id = ? ORDER BY id DESC LIMIT 50');
+  $st = $db->prepare("SELECT id, po_no, status, order_date FROM purchase_orders WHERE supplier_id = ? AND status='OPEN' ORDER BY id DESC LIMIT 50");
   $st->execute([$supplierId]);
   $poOptions = $st->fetchAll();
 }
@@ -177,7 +181,7 @@ require_once __DIR__ . '/includes/header.php';
             <tr>
               <td><?= e($sku) ?><input type="hidden" name="item_id[]" value="<?= e((string)$itemId) ?>" /></td>
               <td><?= e($name) ?></td>
-              <td><input class="input" style="max-width:160px" type="number" min="0" name="qty_received[]" value="0" /></td>
+              <td><input class="input" style="max-width:160px" type="number" min="0" name="qty_received[]" value="<?= e((string)(isset($row['qty']) ? (int)$row['qty'] : 0)) ?>" /></td>
               <td class="muted"><?= e($ref ?: '-') ?></td>
             </tr>
           <?php endforeach; ?>

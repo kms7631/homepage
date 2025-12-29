@@ -94,7 +94,7 @@ if (!defined('LAYOUT_AUTH_PAGE')) {
             <summary class="tree-summary">발주</summary>
             <div class="tree-items">
               <a class="tree-link" href="<?= e(url('/po_list.php?status=OPEN')) ?>">진행중인 발주 목록</a>
-              <a class="tree-link" href="<?= e(url('/po_list.php?status=RECEIVED')) ?>">완료된 발주 목록</a>
+              <a class="tree-link" href="<?= e(url('/po_list.php?status=DONE')) ?>">완료된 발주 목록</a>
             </div>
           </details>
 

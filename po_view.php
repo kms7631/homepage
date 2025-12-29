@@ -15,6 +15,26 @@ if (!$po) {
   redirect('/po_list.php');
 }
 
+function po_status_label(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'DONE';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'CANCEL';
+  }
+  return $dbStatus;
+}
+
+function po_status_badge_class(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'ok';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'danger';
+  }
+  return '';
+}
+
 if (!is_admin()) {
   $sid = (int)(current_supplier_id() ?? 0);
   if ($sid > 0 && (int)($po['supplier_id'] ?? 0) !== $sid) {
@@ -41,6 +61,39 @@ if ((string)($po['status'] ?? '') === 'OPEN') {
   }
 }
 
+if (is_post()) {
+  try {
+    $action = trim((string)($_POST['action'] ?? ''));
+    if ($action !== 'cancel') {
+      throw new RuntimeException('잘못된 요청입니다.');
+    }
+
+    if ((string)($po['status'] ?? '') !== 'OPEN') {
+      throw new RuntimeException('OPEN 상태의 발주만 취소할 수 있습니다.');
+    }
+    if (!$canEdit) {
+      throw new RuntimeException('접근 권한이 없습니다.');
+    }
+
+    // 안전장치: 연결된 입고가 있으면 취소 불가
+    $st = $db->prepare('SELECT COUNT(*) FROM receipts WHERE purchase_order_id = ?');
+    $st->execute([$id]);
+    $rcCnt = (int)$st->fetchColumn();
+    if ($rcCnt > 0) {
+      throw new RuntimeException('이미 입고 처리된 발주는 취소할 수 없습니다.');
+    }
+
+    $stUp = $db->prepare("UPDATE purchase_orders SET status='CANCELLED' WHERE id = ?");
+    $stUp->execute([$id]);
+
+    flash_set('success', '발주가 취소되었습니다.');
+    redirect('/po_view.php?id=' . $id);
+  } catch (Throwable $e) {
+    flash_set('error', $e->getMessage());
+    redirect('/po_view.php?id=' . $id);
+  }
+}
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -57,9 +110,20 @@ require_once __DIR__ . '/includes/header.php';
           <?php if ($canEdit): ?>
             <a class="btn secondary" href="<?= e(url('/po_edit.php?id=' . (int)$po['id'])) ?>">수정/삭제</a>
           <?php endif; ?>
-          <a class="btn" href="<?= e(url('/receipt_create.php?purchase_order_id=' . (int)$po['id'])) ?>">이 발주 입고 처리</a>
+          <?php if ((string)($po['status'] ?? '') === 'OPEN'): ?>
+            <a class="btn" href="<?= e(url('/receipt_create.php?purchase_order_id=' . (int)$po['id'])) ?>">이 발주 입고 처리</a>
+          <?php endif; ?>
         </div>
       </div>
+
+      <?php if ($canEdit && (string)($po['status'] ?? '') === 'OPEN'): ?>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <form method="post" action="<?= e(url('/po_view.php?id=' . (int)$po['id'])) ?>" onsubmit="return confirm('이 발주를 취소(CANCEL) 처리할까요?')">
+            <input type="hidden" name="action" value="cancel" />
+            <button class="btn danger" type="submit">취소(CANCEL)</button>
+          </form>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -71,7 +135,7 @@ require_once __DIR__ . '/includes/header.php';
           <tr><th>발주번호</th><td><?= e($po['po_no']) ?></td></tr>
           <tr><th>거래처</th><td><?= e($po['supplier_name']) ?></td></tr>
           <tr><th>발주일</th><td><?= e($po['order_date']) ?></td></tr>
-          <tr><th>상태</th><td><span class="badge"><?= e($po['status']) ?></span></td></tr>
+          <tr><th>상태</th><td><span class="badge <?= e(po_status_badge_class((string)($po['status'] ?? ''))) ?>"><?= e(po_status_label((string)($po['status'] ?? ''))) ?></span></td></tr>
           <tr><th>등록자</th><td><?= e($po['ordered_by_name']) ?></td></tr>
         </tbody>
       </table>

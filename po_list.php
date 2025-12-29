@@ -65,10 +65,44 @@ $from = trim((string)($_GET['from'] ?? ''));
 $to = trim((string)($_GET['to'] ?? ''));
 $supplierId = (int)($_GET['supplier_id'] ?? 0);
 $keyword = trim((string)($_GET['keyword'] ?? ''));
-$status = trim((string)($_GET['status'] ?? ''));
+$statusKey = strtoupper(trim((string)($_GET['status'] ?? '')));
+if (!in_array($statusKey, ['', 'ALL', 'OPEN', 'DONE', 'CANCEL'], true)) {
+  $statusKey = '';
+}
+if ($statusKey === '') {
+  $statusKey = 'OPEN';
+}
 
-if ($status === '') {
-  $status = 'OPEN';
+// DB status mapping (keep DB ENUM as-is)
+$statusDb = '';
+if ($statusKey === 'OPEN') {
+  $statusDb = 'OPEN';
+} elseif ($statusKey === 'DONE') {
+  $statusDb = 'RECEIVED';
+} elseif ($statusKey === 'CANCEL') {
+  $statusDb = 'CANCELLED';
+} elseif ($statusKey === 'ALL') {
+  $statusDb = '';
+}
+
+function po_status_label(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'DONE';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'CANCEL';
+  }
+  return $dbStatus;
+}
+
+function po_status_badge_class(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'ok';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'danger';
+  }
+  return '';
 }
 
 if (!is_admin()) {
@@ -81,7 +115,7 @@ $pos = PurchaseOrder::list($db, [
   'to' => $to,
   'supplier_id' => $supplierId,
   'keyword' => $keyword,
-  'status' => $status,
+  'status' => $statusDb,
 ]);
 
 $extraHeadHtml = flatpickr_datepicker_head_html();
@@ -105,18 +139,28 @@ require_once __DIR__ . '/includes/header.php';
 
   <div class="form-row" style="align-items:center">
     <div class="field" style="display:flex;gap:8px;align-items:center">
-      <a class="btn <?= $status === 'OPEN' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=OPEN')) ?>">발주 목록</a>
-      <a class="btn <?= $status === 'RECEIVED' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=RECEIVED')) ?>">완료 발주 목록</a>
+      <a class="btn <?= $statusKey === 'ALL' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=ALL')) ?>">전체</a>
+      <a class="btn <?= $statusKey === 'OPEN' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=OPEN')) ?>">OPEN</a>
+      <a class="btn <?= $statusKey === 'DONE' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=DONE')) ?>">DONE</a>
+      <a class="btn <?= $statusKey === 'CANCEL' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=CANCEL')) ?>">CANCEL</a>
     </div>
     <div class="field" style="flex:1"></div>
     <div class="field">
-      <span class="badge">현재 보기: <?= e($status) ?></span>
+      <span class="badge">현재 보기: <?= e($statusKey === 'ALL' ? '전체' : $statusKey) ?></span>
     </div>
   </div>
 
   <form method="get" action="<?= e(url('/po_list.php')) ?>" style="margin-top:12px">
-    <input type="hidden" name="status" value="<?= e($status) ?>" />
     <div class="form-row">
+      <div class="field" style="min-width:200px">
+        <div class="label">상태</div>
+        <select name="status">
+          <option value="ALL" <?= $statusKey === 'ALL' ? 'selected' : '' ?>>전체</option>
+          <option value="OPEN" <?= $statusKey === 'OPEN' ? 'selected' : '' ?>>OPEN</option>
+          <option value="DONE" <?= $statusKey === 'DONE' ? 'selected' : '' ?>>DONE</option>
+          <option value="CANCEL" <?= $statusKey === 'CANCEL' ? 'selected' : '' ?>>CANCEL</option>
+        </select>
+      </div>
       <div class="field">
         <div class="label">기간(From)</div>
         <input class="input js-date" type="text" name="from" value="<?= e($from) ?>" placeholder="YYYY-MM-DD" autocomplete="off" />
@@ -181,7 +225,10 @@ require_once __DIR__ . '/includes/header.php';
           <td><a href="<?= e(url('/po_view.php?id=' . (int)$po['id'])) ?>"><?= e($po['po_no']) ?></a></td>
           <td><?= e($po['supplier_name']) ?></td>
           <td><?= e($po['order_date']) ?></td>
-          <td><span class="badge"><?= e($po['status']) ?></span></td>
+          <td>
+            <?php $badgeClass = po_status_badge_class((string)($po['status'] ?? '')); ?>
+            <span class="badge <?= e($badgeClass) ?>"><?= e(po_status_label((string)($po['status'] ?? ''))) ?></span>
+          </td>
           <td><?= e($summary) ?></td>
           <td><?= e($po['ordered_by_name']) ?></td>
           <td>
@@ -205,7 +252,7 @@ require_once __DIR__ . '/includes/header.php';
                 <input type="hidden" name="to" value="<?= e($to) ?>" />
                 <input type="hidden" name="supplier_id" value="<?= e((string)$supplierId) ?>" />
                 <input type="hidden" name="keyword" value="<?= e($keyword) ?>" />
-                <input type="hidden" name="status" value="<?= e($status) ?>" />
+                <input type="hidden" name="status" value="<?= e($statusKey) ?>" />
                 <button class="btn secondary" type="submit">삭제</button>
               </form>
             <?php elseif ((string)($po['status'] ?? '') === 'RECEIVED' && $receiptId > 0): ?>

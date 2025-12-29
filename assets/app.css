@@ -9,8 +9,8 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .nav a.active{color:var(--text);border-color:var(--border);background:rgba(122,162,255,.10)}
 .card{background:rgba(16,27,51,.70);border:1px solid var(--border);border-radius:14px;padding:14px}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
-.col-6{grid-column:span 6}.col-12{grid-column:span 12}
-@media (max-width:900px){.col-6{grid-column:span 12}}
+.col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-12{grid-column:span 12}
+@media (max-width:900px){.col-4{grid-column:span 12}.col-6{grid-column:span 12}}
 .h1{font-size:20px;margin:0 0 10px 0;word-break:keep-all;overflow-wrap:normal;white-space:nowrap}.muted{color:var(--muted)}
 .table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:12px;border:1px solid var(--border);word-break:keep-all;overflow-wrap:normal}
 .table th,.table td{padding:10px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}

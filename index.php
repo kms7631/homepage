@@ -9,6 +9,80 @@ if (!is_admin()) {
   $scopeSupplierId = (int)(current_supplier_id() ?? 0);
 }
 
+function po_status_label(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'DONE';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'CANCEL';
+  }
+  return $dbStatus;
+}
+
+function po_status_badge_class(string $dbStatus): string {
+  if ($dbStatus === 'RECEIVED') {
+    return 'ok';
+  }
+  if ($dbStatus === 'CANCELLED') {
+    return 'danger';
+  }
+  return '';
+}
+
+// KPI
+$pendingPoCount = 0;
+$todayReceiptCount = 0;
+$todayReceiptQty = 0;
+$lowStockCount = 0;
+$today = date('Y-m-d');
+
+// 1) 미처리 발주(OPEN)
+if ($scopeSupplierId > 0) {
+  $st = $db->prepare("SELECT COUNT(*) FROM purchase_orders po WHERE po.status='OPEN' AND po.supplier_id = ?");
+  $st->execute([$scopeSupplierId]);
+  $pendingPoCount = (int)$st->fetchColumn();
+} else {
+  $st = $db->query("SELECT COUNT(*) FROM purchase_orders po WHERE po.status='OPEN'");
+  $pendingPoCount = (int)$st->fetchColumn();
+}
+
+// 2) 오늘 입고(건수 + 수량합)
+if ($scopeSupplierId > 0) {
+  $st = $db->prepare('SELECT COUNT(DISTINCT r.id) AS receipt_count, COALESCE(SUM(ri.qty_received),0) AS total_qty
+                      FROM receipts r
+                      LEFT JOIN receipt_items ri ON ri.receipt_id = r.id
+                      WHERE r.receipt_date = ? AND r.supplier_id = ?');
+  $st->execute([$today, $scopeSupplierId]);
+} else {
+  $st = $db->prepare('SELECT COUNT(DISTINCT r.id) AS receipt_count, COALESCE(SUM(ri.qty_received),0) AS total_qty
+                      FROM receipts r
+                      LEFT JOIN receipt_items ri ON ri.receipt_id = r.id
+                      WHERE r.receipt_date = ?');
+  $st->execute([$today]);
+}
+$row = $st->fetch() ?: [];
+$todayReceiptCount = (int)($row['receipt_count'] ?? 0);
+$todayReceiptQty = (int)($row['total_qty'] ?? 0);
+
+// 3) 부족 품목 수(on_hand <= min_stock)
+if ($scopeSupplierId > 0) {
+  $st = $db->prepare('SELECT COUNT(*)
+                      FROM items it
+                      LEFT JOIN inventory inv ON inv.item_id = it.id
+                      WHERE it.active = 1
+                        AND COALESCE(inv.on_hand,0) <= it.min_stock
+                        AND it.supplier_id = ?');
+  $st->execute([$scopeSupplierId]);
+  $lowStockCount = (int)$st->fetchColumn();
+} else {
+  $st = $db->query('SELECT COUNT(*)
+                    FROM items it
+                    LEFT JOIN inventory inv ON inv.item_id = it.id
+                    WHERE it.active = 1
+                      AND COALESCE(inv.on_hand,0) <= it.min_stock');
+  $lowStockCount = (int)$st->fetchColumn();
+}
+
 $low = Inventory::lowStockTop($db, 5, $scopeSupplierId);
 $recentPo = PurchaseOrder::latest($db, 5, $scopeSupplierId);
 $recentRc = Receipt::latest($db, 5, $scopeSupplierId);
@@ -17,6 +91,49 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="grid">
+  <div class="col-4">
+    <div class="card">
+      <div class="kpi">
+        <div>
+          <div class="muted">미처리 발주</div>
+          <div class="value"><?= e((string)$pendingPoCount) ?></div>
+        </div>
+        <div>
+          <a class="btn secondary" href="<?= e(url('/po_list.php?status=OPEN')) ?>">보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-4">
+    <div class="card">
+      <div class="kpi">
+        <div>
+          <div class="muted">오늘 입고</div>
+          <div class="value"><?= e((string)$todayReceiptCount) ?>건</div>
+          <div class="small">수량 합계: <?= e((string)$todayReceiptQty) ?></div>
+        </div>
+        <div>
+          <a class="btn secondary" href="<?= e(url('/receipt_list.php?from=' . $today . '&to=' . $today)) ?>">보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-4">
+    <div class="card">
+      <div class="kpi">
+        <div>
+          <div class="muted">부족 품목</div>
+          <div class="value"><?= e((string)$lowStockCount) ?></div>
+        </div>
+        <div>
+          <a class="btn secondary" href="<?= e(url('/items.php')) ?>">보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="col-12">
     <div class="card">
       <div class="kpi">
@@ -87,7 +204,10 @@ require_once __DIR__ . '/includes/header.php';
               <td><a href="<?= e(url('/po_view.php?id=' . (int)$po['id'])) ?>"><?= e($po['po_no']) ?></a></td>
               <td><?= e($po['supplier_name']) ?></td>
               <td><?= e($po['order_date']) ?></td>
-              <td><span class="badge"><?= e($po['status']) ?></span></td>
+              <td>
+                <?php $badgeClass = po_status_badge_class((string)($po['status'] ?? '')); ?>
+                <span class="badge <?= e($badgeClass) ?>"><?= e(po_status_label((string)($po['status'] ?? ''))) ?></span>
+              </td>
             </tr>
           <?php endforeach; ?>
         <?php endif; ?>
