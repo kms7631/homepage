@@ -16,13 +16,18 @@ $isAuthPage = (!$me && $path === '/login.php');
 if (!defined('LAYOUT_AUTH_PAGE')) {
   define('LAYOUT_AUTH_PAGE', $isAuthPage);
 }
+
+$cssVer = @filemtime(__DIR__ . '/../assets/app.css');
+if ($cssVer === false) {
+  $cssVer = 1;
+}
 ?><!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= e(APP_NAME) ?></title>
-  <link rel="stylesheet" href="<?= e(url('/assets/app.css')) ?>" />
+  <link rel="stylesheet" href="<?= e(url('/assets/app.css?v=' . (string)$cssVer)) ?>" />
   <?php if (isset($extraHeadHtml) && is_string($extraHeadHtml) && $extraHeadHtml !== ''): ?>
     <?= $extraHeadHtml ?>
   <?php endif; ?>
