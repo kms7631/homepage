@@ -104,7 +104,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="col-4">
     <div class="kpi-card ok">
       <div class="kpi-title">오늘 입고</div>
-      <div class="kpi-main"><?= e((string)$todayReceiptCount) ?><span class="small" style="margin-left:6px;color:inherit">건</span> / <?= e((string)$todayReceiptQty) ?><span class="small" style="margin-left:6px;color:inherit">개</span></div>
+      <div class="kpi-main tight"><?= e((string)$todayReceiptCount) ?><span class="small" style="margin-left:6px;color:inherit">건</span>/<?= e((string)$todayReceiptQty) ?><span class="small" style="margin-left:6px;color:inherit">개</span></div>
     </div>
   </div>
 

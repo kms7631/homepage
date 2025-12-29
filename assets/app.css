@@ -42,6 +42,7 @@ textarea{min-height:90px}
 .kpi-card{border-radius:14px;padding:18px;border:1px solid var(--border);background:rgba(232,238,252,.04);text-align:center}
 .kpi-card .kpi-title{font-size:13px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.92)}
 .kpi-card .kpi-main{font-size:34px;font-weight:900;line-height:1.1;margin-top:10px;white-space:nowrap;color:#fff}
+.kpi-card .kpi-main.tight{font-size:28px}
 .kpi-card .kpi-sub{margin-top:8px;font-size:13px;color:rgba(255,255,255,.92);white-space:nowrap}
 .kpi-card.accent{background:rgba(122,162,255,.22)}
 .kpi-card.ok{background:rgba(54,211,153,.20)}
