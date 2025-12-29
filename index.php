@@ -20,6 +20,9 @@ function po_status_label(string $dbStatus): string {
 }
 
 function po_status_badge_class(string $dbStatus): string {
+  if ($dbStatus === 'OPEN') {
+    return 'accent';
+  }
   if ($dbStatus === 'RECEIVED') {
     return 'ok';
   }
@@ -92,7 +95,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="grid">
   <div class="col-4">
-    <div class="kpi-card accent">
+    <div class="kpi-card warn">
       <div class="kpi-title">미처리 발주</div>
       <div class="kpi-main"><?= e((string)$pendingPoCount) ?><span class="small" style="margin-left:6px;color:inherit">건</span></div>
     </div>

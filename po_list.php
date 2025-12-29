@@ -96,6 +96,9 @@ function po_status_label(string $dbStatus): string {
 }
 
 function po_status_badge_class(string $dbStatus): string {
+  if ($dbStatus === 'OPEN') {
+    return 'accent';
+  }
   if ($dbStatus === 'RECEIVED') {
     return 'ok';
   }

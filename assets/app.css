@@ -19,6 +19,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .table-scroll{overflow-x:auto}
 .table-scroll .table{min-width:720px}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);white-space:nowrap}
+.badge.accent{border-color:rgba(122,162,255,.35);color:#dbe6ff;background:rgba(122,162,255,.14)}
 .badge.danger{border-color:rgba(255,107,107,.35);color:#ffd0d0;background:rgba(255,107,107,.10)}
 .badge.ok{border-color:rgba(54,211,153,.35);color:#c8ffea;background:rgba(54,211,153,.10)}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
@@ -38,13 +39,15 @@ textarea{min-height:90px}
 .small{font-size:12px;color:var(--muted)}
 
 /* KPI cards (dashboard) */
-.kpi-card{border-radius:14px;padding:18px;border:1px solid var(--border);background:rgba(232,238,252,.04)}
-.kpi-card .kpi-title{font-size:13px;font-weight:800;letter-spacing:.02em;opacity:.95}
-.kpi-card .kpi-main{font-size:34px;font-weight:900;line-height:1.1;margin-top:8px;white-space:nowrap}
-.kpi-card .kpi-sub{margin-top:6px;font-size:13px;color:rgba(232,238,252,.85);white-space:nowrap}
-.kpi-card.accent{background:rgba(122,162,255,.18)}
-.kpi-card.ok{background:rgba(54,211,153,.16)}
-.kpi-card.danger{background:rgba(255,107,107,.14)}
+.kpi-card{border-radius:14px;padding:18px;border:1px solid var(--border);background:rgba(232,238,252,.04);text-align:center}
+.kpi-card .kpi-title{font-size:13px;font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.92)}
+.kpi-card .kpi-main{font-size:34px;font-weight:900;line-height:1.1;margin-top:10px;white-space:nowrap;color:#fff}
+.kpi-card .kpi-sub{margin-top:8px;font-size:13px;color:rgba(255,255,255,.92);white-space:nowrap}
+.kpi-card.accent{background:rgba(122,162,255,.22)}
+.kpi-card.ok{background:rgba(54,211,153,.20)}
+.kpi-card.danger{background:rgba(255,107,107,.18)}
+/* pending(주황 느낌): 기존 ok/danger 색을 섞어 경고톤으로 */
+.kpi-card.warn{background:linear-gradient(90deg, rgba(255,107,107,.22), rgba(54,211,153,.22))}
 
 /* Auth (login/register) */
 .auth-flash{max-width:480px;margin:18px auto 0 auto}
