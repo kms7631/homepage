@@ -95,24 +95,30 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="grid">
   <div class="col-4">
-    <div class="kpi-card warn">
-      <div class="kpi-title">미처리 발주</div>
-      <div class="kpi-main tight"><?= e((string)$pendingPoCount) ?><span class="kpi-unit">건</span></div>
-    </div>
+    <a class="kpi-link" href="<?= e(url('/po_list.php?status=OPEN')) ?>">
+      <div class="kpi-card warn">
+        <div class="kpi-title">미처리 발주</div>
+        <div class="kpi-main tight"><?= e((string)$pendingPoCount) ?><span class="kpi-unit">건</span></div>
+      </div>
+    </a>
   </div>
 
   <div class="col-4">
-    <div class="kpi-card ok">
-      <div class="kpi-title">오늘 입고</div>
-      <div class="kpi-main tight"><?= e((string)$todayReceiptCount) ?><span class="kpi-unit">건</span><span class="kpi-sep">/</span><?= e((string)$todayReceiptQty) ?><span class="kpi-unit">개</span></div>
-    </div>
+    <a class="kpi-link" href="<?= e(url('/receipt_list.php?from=' . $today . '&to=' . $today)) ?>">
+      <div class="kpi-card ok">
+        <div class="kpi-title">오늘 입고</div>
+        <div class="kpi-main tight"><?= e((string)$todayReceiptCount) ?><span class="kpi-unit">건</span><span class="kpi-sep">/</span><?= e((string)$todayReceiptQty) ?><span class="kpi-unit">개</span></div>
+      </div>
+    </a>
   </div>
 
   <div class="col-4">
-    <div class="kpi-card danger">
-      <div class="kpi-title">부족 품목</div>
-      <div class="kpi-main tight"><?= e((string)$lowStockCount) ?><span class="kpi-unit">개</span></div>
-    </div>
+    <a class="kpi-link" href="<?= e(url('/items.php')) ?>">
+      <div class="kpi-card danger">
+        <div class="kpi-title">부족 품목</div>
+        <div class="kpi-main tight"><?= e((string)$lowStockCount) ?><span class="kpi-unit">개</span></div>
+      </div>
+    </a>
   </div>
 
   <div class="col-12">

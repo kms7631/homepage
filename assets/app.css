@@ -39,6 +39,8 @@ textarea{min-height:90px}
 .small{font-size:12px;color:var(--muted)}
 
 /* KPI cards (dashboard) */
+.kpi-link{display:block;text-decoration:none;color:inherit}
+.kpi-link:hover{text-decoration:none;filter:brightness(1.05)}
 .kpi-card{border-radius:14px;padding:18px;border:1px solid var(--border);background:rgba(232,238,252,.04);text-align:center}
 .kpi-card .kpi-title{font-size:clamp(12px, 1.6vw, 13px);font-weight:800;letter-spacing:.02em;color:rgba(255,255,255,.92);white-space:nowrap}
 .kpi-card .kpi-main{font-size:34px;font-weight:900;line-height:1.1;margin-top:10px;white-space:nowrap;color:#fff;display:inline-flex;flex-wrap:nowrap;align-items:baseline;justify-content:center}
