@@ -17,12 +17,12 @@ if (!$po) {
 
 function po_status_label(string $dbStatus): string {
   if ($dbStatus === 'RECEIVED') {
-    return 'DONE';
+    return '입고';
   }
   if ($dbStatus === 'CANCELLED') {
-    return 'CANCEL';
+    return '취소';
   }
-  return $dbStatus;
+  return '진행 중';
 }
 
 function po_status_badge_class(string $dbStatus): string {

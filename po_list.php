@@ -70,7 +70,7 @@ if (!in_array($statusKey, ['', 'ALL', 'OPEN', 'DONE', 'CANCEL'], true)) {
   $statusKey = '';
 }
 if ($statusKey === '') {
-  $statusKey = 'OPEN';
+  $statusKey = 'ALL';
 }
 
 // DB status mapping (keep DB ENUM as-is)
@@ -87,12 +87,12 @@ if ($statusKey === 'OPEN') {
 
 function po_status_label(string $dbStatus): string {
   if ($dbStatus === 'RECEIVED') {
-    return 'DONE';
+    return '입고';
   }
   if ($dbStatus === 'CANCELLED') {
-    return 'CANCEL';
+    return '취소';
   }
-  return $dbStatus;
+  return '진행 중';
 }
 
 function po_status_badge_class(string $dbStatus): string {
@@ -138,27 +138,18 @@ require_once __DIR__ . '/includes/header.php';
   <div style="margin-top:10px"></div>
 
   <div class="form-row" style="align-items:center">
-    <div class="field" style="display:flex;gap:8px;align-items:center">
-      <a class="btn <?= $statusKey === 'ALL' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=ALL')) ?>">전체</a>
-      <a class="btn <?= $statusKey === 'OPEN' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=OPEN')) ?>">OPEN</a>
-      <a class="btn <?= $statusKey === 'DONE' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=DONE')) ?>">DONE</a>
-      <a class="btn <?= $statusKey === 'CANCEL' ? '' : 'secondary' ?>" href="<?= e(url('/po_list.php?status=CANCEL')) ?>">CANCEL</a>
-    </div>
     <div class="field" style="flex:1"></div>
-    <div class="field">
-      <span class="badge">현재 보기: <?= e($statusKey === 'ALL' ? '전체' : $statusKey) ?></span>
-    </div>
   </div>
 
   <form method="get" action="<?= e(url('/po_list.php')) ?>" style="margin-top:12px">
     <div class="form-row">
-      <div class="field" style="min-width:200px">
+      <div class="field" style="min-width:160px">
         <div class="label">상태</div>
         <select name="status">
           <option value="ALL" <?= $statusKey === 'ALL' ? 'selected' : '' ?>>전체</option>
-          <option value="OPEN" <?= $statusKey === 'OPEN' ? 'selected' : '' ?>>OPEN</option>
-          <option value="DONE" <?= $statusKey === 'DONE' ? 'selected' : '' ?>>DONE</option>
-          <option value="CANCEL" <?= $statusKey === 'CANCEL' ? 'selected' : '' ?>>CANCEL</option>
+          <option value="OPEN" <?= $statusKey === 'OPEN' ? 'selected' : '' ?>>진행 중</option>
+          <option value="DONE" <?= $statusKey === 'DONE' ? 'selected' : '' ?>>입고</option>
+          <option value="CANCEL" <?= $statusKey === 'CANCEL' ? 'selected' : '' ?>>취소</option>
         </select>
       </div>
       <div class="field">

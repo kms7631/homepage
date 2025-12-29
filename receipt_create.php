@@ -156,10 +156,9 @@ require_once __DIR__ . '/includes/header.php';
       <table class="table">
         <thead>
           <tr>
-            <th>SKU</th>
             <th>품목</th>
+            <th>발주 수량</th>
             <th>입고 수량</th>
-            <th>참고</th>
           </tr>
         </thead>
         <tbody>
@@ -173,16 +172,18 @@ require_once __DIR__ . '/includes/header.php';
               $itemId = (int)($row['item_id'] ?? ($row['id'] ?? 0));
               $sku = (string)($row['sku'] ?? '');
               $name = (string)($row['name'] ?? '');
-              $ref = '';
-              if (isset($row['qty'])) {
-                $ref = '발주수량: ' . (int)$row['qty'];
-              }
+              $poQty = isset($row['qty']) ? (int)$row['qty'] : 0;
             ?>
             <tr>
-              <td><?= e($sku) ?><input type="hidden" name="item_id[]" value="<?= e((string)$itemId) ?>" /></td>
-              <td><?= e($name) ?></td>
-              <td><input class="input" style="max-width:160px" type="number" min="0" name="qty_received[]" value="<?= e((string)(isset($row['qty']) ? (int)$row['qty'] : 0)) ?>" /></td>
-              <td class="muted"><?= e($ref ?: '-') ?></td>
+              <td>
+                <?= e($name) ?>
+                <?php if ($sku !== ''): ?>
+                  <div class="small"><?= e($sku) ?></div>
+                <?php endif; ?>
+                <input type="hidden" name="item_id[]" value="<?= e((string)$itemId) ?>" />
+              </td>
+              <td><?= e((string)$poQty) ?></td>
+              <td><input class="input" style="max-width:160px" type="number" min="0" name="qty_received[]" value="<?= e((string)$poQty) ?>" /></td>
             </tr>
           <?php endforeach; ?>
         <?php endif; ?>

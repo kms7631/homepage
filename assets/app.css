@@ -18,7 +18,7 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .table.nowrap th,.table.nowrap td{white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
 .table-scroll{overflow-x:auto}
 .table-scroll .table{min-width:720px}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);white-space:nowrap}
 .badge.danger{border-color:rgba(255,107,107,.35);color:#ffd0d0;background:rgba(255,107,107,.10)}
 .badge.ok{border-color:rgba(54,211,153,.35);color:#c8ffea;background:rgba(54,211,153,.10)}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
@@ -26,16 +26,25 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .label{font-size:12px;color:var(--muted);word-break:keep-all;overflow-wrap:normal;white-space:nowrap}
 .input,select,textarea{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(7,11,20,.45);color:var(--text)}
 textarea{min-height:90px}
-.btn{display:inline-block;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(122,162,255,.12);color:var(--text);cursor:pointer;font:inherit}
+.btn{display:inline-block;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(122,162,255,.12);color:var(--text);cursor:pointer;font:inherit;white-space:nowrap}
 .btn:hover{filter:brightness(1.08)}
 .btn.secondary{background:rgba(232,238,252,.06)}
 .btn.danger{background:rgba(255,107,107,.12)}
 .flash{padding:10px 12px;border-radius:12px;border:1px solid var(--border);margin:0 0 12px 0}
 .flash.success{border-color:rgba(54,211,153,.35);background:rgba(54,211,153,.08)}
 .flash.error{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
-.kpi{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.kpi{display:flex;gap:10px;align-items:center;justify-content:space-between}
 .kpi .value{font-size:20px;font-weight:700}
 .small{font-size:12px;color:var(--muted)}
+
+/* KPI cards (dashboard) */
+.kpi-card{border-radius:14px;padding:18px;border:1px solid var(--border);background:rgba(232,238,252,.04)}
+.kpi-card .kpi-title{font-size:13px;font-weight:800;letter-spacing:.02em;opacity:.95}
+.kpi-card .kpi-main{font-size:34px;font-weight:900;line-height:1.1;margin-top:8px;white-space:nowrap}
+.kpi-card .kpi-sub{margin-top:6px;font-size:13px;color:rgba(232,238,252,.85);white-space:nowrap}
+.kpi-card.accent{background:rgba(122,162,255,.18)}
+.kpi-card.ok{background:rgba(54,211,153,.16)}
+.kpi-card.danger{background:rgba(255,107,107,.14)}
 
 /* Auth (login/register) */
 .auth-flash{max-width:480px;margin:18px auto 0 auto}
