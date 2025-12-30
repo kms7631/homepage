@@ -179,7 +179,7 @@ $lowStockItems = [];
 if ($supplierId > 0) {
   $allForSupplier = Item::listBySupplier($db, $supplierId);
   foreach ($allForSupplier as $it) {
-    if ((int)$it['on_hand'] <= (int)$it['min_stock']) {
+    if ((int)$it['on_hand'] < (int)$it['min_stock']) {
       $lowStockItems[] = $it;
     }
   }
@@ -362,7 +362,7 @@ require_once __DIR__ . '/includes/header.php';
               <tr><td colspan="5" class="muted">검색 결과가 없습니다.</td></tr>
             <?php else: ?>
               <?php foreach ($searchResults as $it): ?>
-                <?php $isLow = ((int)$it['on_hand'] <= (int)$it['min_stock']); ?>
+                <?php $isLow = ((int)$it['on_hand'] < (int)$it['min_stock']); ?>
                 <tr>
                   <td><?= e($it['sku']) ?></td>
                   <td>

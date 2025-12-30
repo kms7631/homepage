@@ -18,6 +18,45 @@ if (is_post()) {
   try {
     $action = trim((string)($_POST['action'] ?? 'create'));
 
+    if ($action === 'delete') {
+      $id = (int)($_POST['id'] ?? 0);
+      if ($id <= 0) {
+        throw new RuntimeException('삭제할 품목이 올바르지 않습니다.');
+      }
+      Item::delete($db, $id);
+      flash_set('success', '품목이 삭제(비활성)되었습니다.');
+      redirect('/admin/items.php');
+    }
+
+    if ($action === 'normalize_sup_sku') {
+      $result = Item::normalizeRandomSupplierSkus($db);
+      flash_set(
+        'success',
+        '랜덤 SKU 정리가 완료되었습니다. '
+          . '(변경: ' . (int)$result['updated']
+          . ' / 스킵-충돌: ' . (int)$result['skipped_conflict']
+          . ' / 스킵-기준SKU없음: ' . (int)$result['skipped_no_canon']
+          . ' / 스킵-오류: ' . (int)$result['skipped_error']
+          . ')'
+      );
+      redirect('/admin/items.php');
+    }
+
+    if ($action === 'normalize_sku_by_name') {
+      $result = Item::normalizeSkuByName($db);
+      flash_set(
+        'success',
+        '품목명 기준 SKU 단일화가 완료되었습니다. '
+          . '(변경: ' . (int)$result['updated']
+          . ' / 스킵-충돌: ' . (int)$result['skipped_conflict']
+          . ' / 스킵-기준SKU없음: ' . (int)$result['skipped_no_canon']
+          . ' / 스킵-동일: ' . (int)$result['skipped_same']
+          . ' / 스킵-오류: ' . (int)$result['skipped_error']
+          . ')'
+      );
+      redirect('/admin/items.php');
+    }
+
     if ($action === 'delete_sample' || $action === 'delete_demo') {
       $db->beginTransaction();
       try {
@@ -51,6 +90,12 @@ if (is_post()) {
     if ($sku === '' || $name === '') {
       throw new RuntimeException('SKU/품목명을 입력하세요.');
     }
+
+    // 동일 품목명이 이미 있으면 SKU는 기존 canonical로 고정
+    $canonSku = Item::canonicalSkuForName($db, $name);
+    if ($canonSku) {
+      $_POST['sku'] = $canonSku;
+    }
     $db->beginTransaction();
     try {
       Item::create($db, $_POST);
@@ -69,7 +114,7 @@ if (is_post()) {
 $suppliers = Supplier::listAll($db);
 $items = Item::list($db, ['q' => '', 'supplier_id' => 0]);
 
-// 동일 품목명이 여러 거래처에 존재할 수 있어, 화면에서는 품목명 기준으로 묶어서 표시합니다.
+// 동일 품목이 여러 거래처에 존재할 수 있어, 화면에서는 품목명 기준으로 묶어서 표시합니다.
 // (첫 줄은 그대로, 나머지는 화살표로 펼쳐보기)
 $groupedItems = [];
 foreach ($items as $it) {
@@ -109,9 +154,13 @@ require_once __DIR__ . '/../includes/header.php';
               $it = $group[0];
               $dupes = array_slice($group, 1);
               $groupId = substr(sha1('itemgrp:' . (string)$nameKey), 0, 12);
+              $canonSku = Item::canonicalSkuForName($db, (string)($it['name'] ?? ''));
+              if (!$canonSku) {
+                $canonSku = (string)($it['sku'] ?? '');
+              }
             ?>
             <tr>
-              <td><?= e($it['sku']) ?></td>
+              <td><?= e($canonSku) ?></td>
               <td>
                 <?php if ($dupes): ?>
                   <button
@@ -133,19 +182,29 @@ require_once __DIR__ . '/../includes/header.php';
               <td><?= e((string)$it['min_stock']) ?></td>
               <td style="white-space:nowrap">
                 <a class="btn secondary" href="<?= e(url('/admin/items.php?edit_id=' . (int)$it['id'])) ?>">수정</a>
+                <form method="post" action="<?= e(url('/admin/items.php')) ?>" style="display:inline" onsubmit="return confirm('이 품목을 삭제(비활성)할까요? 품목 목록에서 숨김 처리되며, 과거 발주/입고 기록에는 영향이 없습니다.');">
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="id" value="<?= e((string)$it['id']) ?>" />
+                  <button class="btn danger" type="submit">삭제</button>
+                </form>
               </td>
             </tr>
 
             <?php if ($dupes): ?>
               <?php foreach ($dupes as $d): ?>
                 <tr class="dup-row" data-group="<?= e($groupId) ?>" hidden>
-                  <td class="dup-sku"><?= e($d['sku']) ?></td>
+                  <td class="dup-sku"></td>
                   <td></td>
                   <td><?= e($d['supplier_name'] ?? '-') ?></td>
                   <td><?= e((string)$d['on_hand']) ?></td>
                   <td><?= e((string)$d['min_stock']) ?></td>
                   <td style="white-space:nowrap">
                     <a class="btn secondary" href="<?= e(url('/admin/items.php?edit_id=' . (int)$d['id'])) ?>">수정</a>
+                    <form method="post" action="<?= e(url('/admin/items.php')) ?>" style="display:inline" onsubmit="return confirm('이 품목을 삭제(비활성)할까요? 품목 목록에서 숨김 처리되며, 과거 발주/입고 기록에는 영향이 없습니다.');">
+                      <input type="hidden" name="action" value="delete" />
+                      <input type="hidden" name="id" value="<?= e((string)$d['id']) ?>" />
+                      <button class="btn danger" type="submit">삭제</button>
+                    </form>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -160,6 +219,22 @@ require_once __DIR__ . '/../includes/header.php';
         <input type="hidden" name="action" value="delete_sample" />
         <button class="btn secondary" type="submit">샘플 품목 정리</button>
         <span class="small muted" style="margin-left:8px">발주/입고에 연결된 품목은 삭제되지 않습니다.</span>
+      </form>
+
+      <div style="margin-top:10px"></div>
+
+      <form method="post" action="<?= e(url('/admin/items.php')) ?>" onsubmit="return confirm('SUP* 형태로 생성된 랜덤 SKU를 품목명 기준의 SKU로 정리합니다. 같은 거래처에 이미 동일 SKU가 있으면 해당 항목은 스킵됩니다. 진행할까요?')">
+        <input type="hidden" name="action" value="normalize_sup_sku" />
+        <button class="btn secondary" type="submit">랜덤 SKU 정리</button>
+        <span class="small muted" style="margin-left:8px">과거에 생성된 SUP* 품목을 정리합니다.</span>
+      </form>
+
+      <div style="margin-top:10px"></div>
+
+      <form method="post" action="<?= e(url('/admin/items.php')) ?>" onsubmit="return confirm('품목명 기준으로 SKU를 하나로 단일화합니다. 같은 거래처에 이미 동일 SKU가 있으면 해당 항목은 스킵됩니다. 진행할까요?')">
+        <input type="hidden" name="action" value="normalize_sku_by_name" />
+        <button class="btn secondary" type="submit">SKU 단일화 정리</button>
+        <span class="small muted" style="margin-left:8px">동일 품목명에 SKU가 여러 개인 경우를 정리합니다.</span>
       </form>
 
       <h2 class="h1"><?= $editItem ? '품목 수정' : '품목 추가' ?></h2>

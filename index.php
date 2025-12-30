@@ -67,22 +67,24 @@ $row = $st->fetch() ?: [];
 $todayReceiptCount = (int)($row['receipt_count'] ?? 0);
 $todayReceiptQty = (int)($row['total_qty'] ?? 0);
 
-// 3) 부족 품목 수(on_hand <= min_stock)
+// 3) 부족 품목 수(품목명 기준 중복 제거, on_hand < min_stock)
 if ($scopeSupplierId > 0) {
-  $st = $db->prepare('SELECT COUNT(*)
+  $st = $db->prepare("SELECT COUNT(DISTINCT it.name)
                       FROM items it
                       LEFT JOIN inventory inv ON inv.item_id = it.id
                       WHERE it.active = 1
-                        AND COALESCE(inv.on_hand,0) <= it.min_stock
-                        AND it.supplier_id = ?');
+                        AND COALESCE(inv.on_hand,0) < it.min_stock
+                        AND it.name <> ''
+                        AND it.supplier_id = ?");
   $st->execute([$scopeSupplierId]);
   $lowStockCount = (int)$st->fetchColumn();
 } else {
-  $st = $db->query('SELECT COUNT(*)
+  $st = $db->query("SELECT COUNT(DISTINCT it.name)
                     FROM items it
                     LEFT JOIN inventory inv ON inv.item_id = it.id
                     WHERE it.active = 1
-                      AND COALESCE(inv.on_hand,0) <= it.min_stock');
+                      AND COALESCE(inv.on_hand,0) < it.min_stock
+                      AND it.name <> ''");
   $lowStockCount = (int)$st->fetchColumn();
 }
 
@@ -139,7 +141,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="col-6">
     <div class="card">
       <h2 class="h1">부족 품목 TOP 5</h2>
-      <div class="small">기준: 재고(on_hand) ≤ 안전재고(min_stock)</div>
+      <div class="small">기준: 재고(on_hand) &lt; 안전재고(min_stock)</div>
       <div style="margin-top:10px"></div>
       <table class="table">
         <thead>
@@ -158,7 +160,13 @@ require_once __DIR__ . '/includes/header.php';
           <?php foreach ($low as $r): ?>
             <tr>
               <td><?= e($r['sku']) ?></td>
-              <td><a href="<?= e(url('/item_view.php?id=' . (int)$r['id'])) ?>"><?= e($r['name']) ?></a></td>
+              <td>
+                <?php if (is_admin()): ?>
+                  <a href="<?= e(url('/items.php?name_exact=' . urlencode((string)$r['name']))) ?>"><?= e($r['name']) ?></a>
+                <?php else: ?>
+                  <a href="<?= e(url('/item_view.php?id=' . (int)$r['id'])) ?>"><?= e($r['name']) ?></a>
+                <?php endif; ?>
+              </td>
               <td><?= e((string)$r['on_hand']) ?></td>
               <td><?= e((string)$r['min_stock']) ?></td>
               <td><span class="badge danger"><?= e((string)$r['shortage']) ?></span></td>

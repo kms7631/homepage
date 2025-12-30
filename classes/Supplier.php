@@ -50,7 +50,15 @@ final class Supplier {
 
     $templates = [];
     try {
-      $stTpl = $db->prepare('SELECT name, unit, min_stock FROM items WHERE active = 1 ORDER BY RAND() LIMIT ?');
+      // 템플릿은 SUP* 랜덤 SKU를 제외하고, SKU 기준으로 중복을 줄여 선택
+      $stTpl = $db->prepare(
+        "SELECT MIN(id) AS id, sku, name, unit, min_stock
+         FROM items
+         WHERE active = 1 AND sku NOT LIKE 'SUP%'
+         GROUP BY sku, name, unit, min_stock
+         ORDER BY RAND()
+         LIMIT ?"
+      );
       $stTpl->bindValue(1, $count, PDO::PARAM_INT);
       $stTpl->execute();
       $templates = $stTpl->fetchAll();
@@ -70,6 +78,7 @@ final class Supplier {
 
     foreach ($templates as $tpl) {
       $name = (string)($tpl['name'] ?? '품목');
+      $sku = trim((string)($tpl['sku'] ?? ''));
       $unit = trim((string)($tpl['unit'] ?? 'EA')) ?: 'EA';
       $min = (int)($tpl['min_stock'] ?? 0);
       if ($min <= 0) {
@@ -79,23 +88,18 @@ final class Supplier {
       $mode = random_int(0, 1);
       $onHand = $mode === 0 ? random_int(0, max(0, $min)) : random_int($min + 1, $min + 100);
 
-      // SKU는 유니크 제약이 있으므로 충돌 시 몇 번 재시도
-      $inserted = false;
-      for ($try = 0; $try < 5; $try++) {
-        $sku = sprintf('SUP%d-%04d', $supplierId, random_int(0, 9999));
+      // 같은 SKU가 이미 있으면 스킵(또는 DB 유니크 인덱스에 의해 예외)
+      if ($sku !== '') {
         try {
           $insertItem->execute([$sku, $name, $supplierId, $unit, $min]);
-          $inserted = true;
-          break;
         } catch (PDOException $e) {
-          // Duplicate entry 등은 재시도
+          // 기존 DB에서 sku 유니크 제약(uq_items_sku)이 남아있거나, 이미 같은 SKU가 존재하면 스킵
           continue;
         }
-      }
-      if (!$inserted) {
-        // 마지막 fallback
-        $sku = sprintf('SUP%d-%s', $supplierId, bin2hex(random_bytes(3)));
-        $insertItem->execute([$sku, $name, $supplierId, $unit, $min]);
+      } else {
+        // 템플릿 SKU가 없으면 fallback 생성
+        $sku2 = sprintf('ITEM-%s', strtoupper(bin2hex(random_bytes(3))));
+        $insertItem->execute([$sku2, $name, $supplierId, $unit, $min]);
       }
 
       $itemId = (int)$db->lastInsertId();

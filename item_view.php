@@ -23,7 +23,7 @@ if (!is_admin()) {
   }
 }
 
-$isLow = ((int)$item['on_hand'] <= (int)$item['min_stock']);
+$isLow = ((int)$item['on_hand'] < (int)$item['min_stock']);
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -79,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
       </table>
       <?php if ($isLow): ?>
         <div class="flash error" style="margin-top:10px">
-          안전재고 이하입니다. 발주 등록 후 입고 처리로 재고 반영을 확인하세요.
+          안전재고 미만입니다. 발주 등록 후 입고 처리로 재고 반영을 확인하세요.
         </div>
       <?php endif; ?>
     </div>

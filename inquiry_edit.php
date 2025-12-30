@@ -32,7 +32,7 @@ if (is_post()) {
 
     Inquiry::update($db, $id, $meId, $title, $body);
     flash_set('success', '문의가 수정되었습니다.');
-    redirect('/inquiry_view.php?id=' . $id);
+    redirect('/inquiry_list.php?id=' . $id);
   } catch (Throwable $e) {
     flash_set('error', $e->getMessage());
   }

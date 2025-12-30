@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS purchase_orders;
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS inquiry_messages;
 DROP TABLE IF EXISTS inquiries;
+DROP TABLE IF EXISTS password_resets;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS suppliers;
@@ -43,6 +44,29 @@ CREATE TABLE users (
   UNIQUE KEY uq_users_email (email),
   KEY idx_users_supplier (supplier_id),
   CONSTRAINT fk_users_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE password_resets (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  approved_at DATETIME NULL,
+  approved_by BIGINT UNSIGNED NULL,
+  used_at DATETIME NULL,
+  request_ip VARCHAR(45) NULL,
+  user_agent VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_password_resets_token_hash (token_hash),
+  KEY idx_password_resets_user_created (user_id, created_at),
+  KEY idx_password_resets_expires_used (expires_at, used_at),
+  KEY idx_password_resets_approved_used (approved_at, used_at),
+  KEY idx_password_resets_approved_by (approved_by),
+  CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+  ,CONSTRAINT fk_password_resets_approved_by FOREIGN KEY (approved_by) REFERENCES users(id)
     ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -93,7 +117,8 @@ CREATE TABLE items (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_items_sku (sku),
+  -- SKU는 거래처별로 유니크(템플릿/미지정 supplier_id=NULL도 0으로 취급)
+  UNIQUE KEY uq_items_supplier_sku ((COALESCE(supplier_id, 0)), sku),
   KEY idx_items_name (name),
   KEY idx_items_supplier (supplier_id),
   CONSTRAINT fk_items_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
@@ -185,9 +210,13 @@ CREATE TABLE notices (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   title VARCHAR(200) NOT NULL,
   body TEXT NOT NULL,
+  priority TINYINT(1) NOT NULL DEFAULT 0,
+  author_id BIGINT UNSIGNED NULL,
   active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_notices_active_created (active, created_at)
+  KEY idx_notices_active_created (active, created_at),
+  KEY idx_notices_active_priority_created (active, priority, created_at),
+  KEY idx_notices_author (author_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

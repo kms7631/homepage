@@ -74,13 +74,7 @@ if ($cssVer === false) {
           <a class="tree-link <?= e(nav_active('/index.php', $path)) ?>" href="<?= e(url('/index.php')) ?>">메인</a>
           <a class="tree-link <?= e(nav_active('/notice', $path)) ?>" href="<?= e(url('/notice.php')) ?>">공지사항</a>
 
-          <details class="tree-group" open>
-            <summary class="tree-summary">1:1 문의</summary>
-            <div class="tree-items">
-              <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php?box=sent')) ?>">보낸 문의</a>
-              <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php?box=received')) ?>">받은 문의</a>
-            </div>
-          </details>
+          <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php')) ?>">1:1 문의</a>
 
           <details class="tree-group" open>
             <summary class="tree-summary">품목</summary>

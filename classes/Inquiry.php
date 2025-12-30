@@ -65,6 +65,34 @@ final class Inquiry {
     return $st->fetchAll();
   }
 
+  public static function listThreadsForUser(PDO $db, int $userId, int $limit = 200): array {
+    $limit = max(1, min(300, $limit));
+
+    $st = $db->prepare(
+      "SELECT i.id, i.sender_id, i.receiver_id, i.title, i.created_at,
+              GREATEST(i.updated_at, COALESCE(lm.last_message_at, i.updated_at)) AS last_activity_at,
+              su.name AS sender_name, su.email AS sender_email,
+              ru.name AS receiver_name, ru.email AS receiver_email
+       FROM inquiries i
+       JOIN users su ON su.id = i.sender_id
+       JOIN users ru ON ru.id = i.receiver_id
+       LEFT JOIN (
+         SELECT inquiry_id, MAX(created_at) AS last_message_at
+         FROM inquiry_messages
+         WHERE active = 1
+         GROUP BY inquiry_id
+       ) lm ON lm.inquiry_id = i.id
+       WHERE i.active = 1 AND (i.sender_id = ? OR i.receiver_id = ?)
+       ORDER BY last_activity_at DESC, i.id DESC
+       LIMIT ?"
+    );
+    $st->bindValue(1, $userId, PDO::PARAM_INT);
+    $st->bindValue(2, $userId, PDO::PARAM_INT);
+    $st->bindValue(3, $limit, PDO::PARAM_INT);
+    $st->execute();
+    return $st->fetchAll();
+  }
+
   public static function findForUser(PDO $db, int $id, int $userId): ?array {
     $st = $db->prepare(
       'SELECT i.id, i.sender_id, i.receiver_id, i.title, i.body, i.created_at, i.updated_at,
@@ -126,6 +154,20 @@ final class Inquiry {
     $st->bindValue(2, $limit, PDO::PARAM_INT);
     $st->execute();
     return $st->fetchAll();
+  }
+
+  public static function findMessageForUser(PDO $db, int $messageId, int $viewerId): ?array {
+    $st = $db->prepare(
+      'SELECT m.id, m.inquiry_id, m.sender_id, m.body, m.created_at,
+              u.name AS sender_name, u.email AS sender_email
+       FROM inquiry_messages m
+       JOIN inquiries i ON i.id = m.inquiry_id
+       JOIN users u ON u.id = m.sender_id
+       WHERE m.id = ? AND m.active = 1 AND i.active = 1 AND (i.sender_id = ? OR i.receiver_id = ?)'
+    );
+    $st->execute([$messageId, $viewerId, $viewerId]);
+    $row = $st->fetch();
+    return $row ?: null;
   }
 
   public static function update(PDO $db, int $id, int $userId, string $title, string $body): void {

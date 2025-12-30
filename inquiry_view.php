@@ -12,6 +12,9 @@ if ($id <= 0) {
   redirect('/inquiry_list.php');
 }
 
+// 통합 화면(좌 목록 + 우 채팅)으로 이동
+redirect('/inquiry_list.php?id=' . $id);
+
 $row = Inquiry::findForUser($db, $id, $meId);
 if (!$row) {
   flash_set('error', '문의 내역을 찾을 수 없습니다.');

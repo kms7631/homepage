@@ -4,14 +4,23 @@ require_admin();
 
 $db = db();
 
+$supportsPriority = Notice::supportsPriority($db);
+$supportsAuthor = Notice::supportsAuthor($db);
+
 $title = trim((string)($_POST['title'] ?? ''));
 $body = trim((string)($_POST['body'] ?? ''));
+$priority = (int)($_POST['priority'] ?? 0);
 
 if (is_post()) {
   try {
-    $id = Notice::create($db, $title, $body, true);
+    if (!$supportsPriority && $priority === 1) {
+      throw new RuntimeException('중요 공지를 사용하려면 DB 마이그레이션(migrate_add_notice_priority.sql)을 먼저 실행하세요.');
+    }
+    $me = current_user();
+    $authorId = ($supportsAuthor && $me) ? (int)($me['id'] ?? 0) : null;
+    $id = Notice::create($db, $title, $body, $priority, true, $authorId);
     flash_set('success', '공지사항이 등록되었습니다.');
-    redirect('/notice_view.php?id=' . $id);
+    redirect('/notice.php?id=' . $id);
   } catch (Throwable $e) {
     flash_set('error', $e->getMessage());
   }
@@ -38,6 +47,18 @@ require_once __DIR__ . '/includes/header.php';
       <div class="field" style="min-width:320px;flex:1">
         <div class="label">제목</div>
         <input class="input" type="text" name="title" value="<?= e($title) ?>" required />
+      </div>
+      <div class="field" style="min-width:160px">
+        <div class="label">구분</div>
+        <select name="priority" class="input" <?= $supportsPriority ? '' : 'disabled' ?>>
+          <option value="0" <?= $priority === 0 ? 'selected' : '' ?>>일반</option>
+          <option value="1" <?= $priority === 1 ? 'selected' : '' ?>>중요</option>
+        </select>
+        <?php if (!$supportsPriority): ?>
+          <div class="small">중요/일반 구분을 사용하려면 DB에 priority 컬럼 추가가 필요합니다.</div>
+          <div class="small">`migrate_add_notice_priority.sql` 실행 후 활성화됩니다.</div>
+          <input type="hidden" name="priority" value="0" />
+        <?php endif; ?>
       </div>
     </div>
     <div style="margin-top:10px"></div>

@@ -73,30 +73,30 @@ if (is_post()) {
           }
 
           $name = (string)$tpl['name'];
+          $sku = trim((string)($tpl['sku'] ?? ''));
           $unit = trim((string)($tpl['unit'] ?? 'EA')) ?: 'EA';
-
-          // SKU 유니크 제약 회피용 생성
-          $sku = null;
-          for ($try = 0; $try < 6; $try++) {
-            $candidate = sprintf('SUP%d-%s', $supplierId, strtoupper(bin2hex(random_bytes(3))));
-            try {
-              $newId = Item::create($db, [
-                'sku' => $candidate,
-                'name' => $name,
-                'supplier_id' => $supplierId,
-                'unit' => $unit,
-                'min_stock' => $fixedMinStock,
-              ]);
-              Inventory::setOnHand($db, $newId, (int)$onHand);
-              $sku = $candidate;
-              break;
-            } catch (PDOException $e) {
-              // 충돌 시 재시도
-              continue;
-            }
+          if ($sku === '') {
+            continue;
           }
-          if ($sku === null) {
-            throw new RuntimeException('SKU 생성에 실패했습니다. 잠시 후 다시 시도하세요.');
+
+          // 이미 내 거래처에 같은 SKU가 있으면 중복 생성하지 않고 재고만 반영
+          $exists = Item::findBySkuForSupplier($db, $sku, $supplierId);
+          if ($exists) {
+            Inventory::setOnHand($db, (int)$exists['id'], (int)$onHand);
+            continue;
+          }
+
+          try {
+            $newId = Item::create($db, [
+              'sku' => $sku,
+              'name' => $name,
+              'supplier_id' => $supplierId,
+              'unit' => $unit,
+              'min_stock' => $fixedMinStock,
+            ]);
+            Inventory::setOnHand($db, $newId, (int)$onHand);
+          } catch (PDOException $e) {
+            throw new RuntimeException('동일 SKU를 거래처별로 사용하려면 DB 마이그레이션이 필요합니다. migrate_adjust_items_sku_unique.sql 을 실행하세요.');
           }
         }
 
@@ -126,8 +126,24 @@ if (is_post()) {
 $cartIds = array_map('intval', array_keys((array)($_SESSION['setup_cart'] ?? [])));
 $cartItems = $cartIds ? Item::listByIds($db, $cartIds) : [];
 
-// 전체 품목(기존에 있던 품목) 목록을 기본으로 보여주고, 검색어가 있으면 필터링
-$searchResults = Item::list($db, ['q' => $q, 'supplier_id' => 0]);
+// 전체 품목(템플릿) 목록: SUP* 랜덤 SKU는 숨기고, 동일 SKU는 한 번만 표시
+$where = ['it.active = 1', "it.sku NOT LIKE 'SUP%'"];
+$params = [];
+if ($q !== '') {
+  $where[] = '(it.name LIKE ? OR it.sku LIKE ?)';
+  $params[] = '%' . $q . '%';
+  $params[] = '%' . $q . '%';
+}
+$st = $db->prepare(
+  'SELECT MIN(it.id) AS id, MIN(it.sku) AS sku, it.name, MIN(it.unit) AS unit, MIN(it.min_stock) AS min_stock
+   FROM items it
+   WHERE ' . implode(' AND ', $where) .
+  ' GROUP BY it.name
+   ORDER BY it.name ASC
+   LIMIT 300'
+);
+$st->execute($params);
+$searchResults = $st->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
 ?>

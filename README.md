@@ -27,8 +27,11 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 
 - `migrate_add_supplier_id.sql` 실행
 - (추가) 공지사항 기능을 사용하려면 `migrate_add_notices.sql` 실행
+- (추가) 공지사항 중요/일반 구분을 사용하려면 `migrate_add_notice_priority.sql` 실행
+- (추가) 공지 작성자 표시를 사용하려면 `migrate_add_notice_author_id.sql` 실행
 - (추가) 1:1 문의 기능을 사용하려면 `migrate_add_inquiries.sql` 실행
 - (추가) 1:1 문의 답변 기능을 사용하려면 `migrate_add_inquiry_messages.sql` 실행
+- (추가) 동일 SKU를 거래처별로 사용하려면 `migrate_adjust_items_sku_unique.sql` 실행
 
 3) DB 접속 정보 설정
 

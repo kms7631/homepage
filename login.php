@@ -45,6 +45,8 @@ require_once __DIR__ . '/includes/header.php';
         <div class="label">비밀번호</div>
         <input class="input" type="password" name="password" required />
         <div class="auth-right-link">
+          <a class="small" href="<?= e(url('/password_forgot.php')) ?>">비밀번호 찾기</a>
+          <span class="muted" style="margin:0 6px">|</span>
           <a class="small" href="<?= e(url('/register.php')) ?>">회원가입</a>
         </div>
       </div>

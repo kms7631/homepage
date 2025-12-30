@@ -16,18 +16,23 @@ final class Inventory {
   }
 
   public static function lowStockTop(PDO $db, int $limit = 5, int $supplierId = 0): array {
-    $where = ['it.active = 1', 'COALESCE(inv.on_hand,0) <= it.min_stock'];
+    $where = ['it.active = 1', "it.name <> ''", 'COALESCE(inv.on_hand,0) < it.min_stock'];
     $params = [];
     if ($supplierId > 0) {
       $where[] = 'it.supplier_id = ?';
       $params[] = $supplierId;
     }
 
-    $sql = 'SELECT it.id, it.sku, it.name, it.min_stock, COALESCE(inv.on_hand,0) AS on_hand,
-                   (it.min_stock - COALESCE(inv.on_hand,0)) AS shortage
+    $sql = 'SELECT MIN(it.id) AS id,
+                   MIN(it.sku) AS sku,
+                   it.name,
+                   SUM(it.min_stock) AS min_stock,
+                   SUM(COALESCE(inv.on_hand,0)) AS on_hand,
+                   SUM(GREATEST(it.min_stock - COALESCE(inv.on_hand,0), 0)) AS shortage
             FROM items it
             LEFT JOIN inventory inv ON inv.item_id = it.id
             WHERE ' . implode(' AND ', $where) . '
+            GROUP BY it.name
             ORDER BY shortage DESC, it.name ASC
             LIMIT ?';
     $st = $db->prepare($sql);
