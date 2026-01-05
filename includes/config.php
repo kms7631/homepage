@@ -39,6 +39,16 @@ define('APP_BASE', rtrim($__appBase, '/'));
 
 define('APP_TIMEZONE', getenv('APP_TIMEZONE') ?: 'Asia/Seoul');
 
+// 디버그(에러 화면 출력) 설정
+// - 운영 환경에서는 APP_DEBUG=0 권장
+// - 개발 환경에서만 APP_DEBUG=1
+$__appDebugEnv = getenv('APP_DEBUG');
+$__appDebug = false;
+if ($__appDebugEnv !== false) {
+	$__appDebug = filter_var($__appDebugEnv, FILTER_VALIDATE_BOOLEAN);
+}
+define('APP_DEBUG', $__appDebug);
+
 // 안전재고 기본값(온보딩/템플릿 복제 등에서 사용)
 $__defaultMinStockEnv = getenv('DEFAULT_MIN_STOCK');
 $__defaultMinStock = is_string($__defaultMinStockEnv) && trim($__defaultMinStockEnv) !== '' ? (int)$__defaultMinStockEnv : 50;

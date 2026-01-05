@@ -1,5 +1,40 @@
 :root{--bg:#0b1220;--card:#101b33;--text:#e8eefc;--muted:#a9b6d6;--border:rgba(232,238,252,.14);--accent:#7aa2ff;--danger:#ff6b6b;--ok:#36d399;}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#070b14);color:var(--text);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* Light theme (opt-in) */
+html[data-theme="light"]{
+	/* 아주 옅은 블루 틴트(화이트에 파란기 소량) */
+	--bg:#f6f9ff;
+	--text:#0b1220;
+	--muted:#4a5a7a;
+	--border:rgba(11,18,32,.14);
+	--accent:#2b62ff;
+	--danger:#d63c3c;
+	--ok:#0f9d6a;
+}
+html[data-theme="light"] body{background:linear-gradient(180deg,var(--bg),#ffffff)}
+html[data-theme="light"] .topbar{background:rgba(255,255,255,.70)}
+html[data-theme="light"] .card{background:rgba(246,249,255,.78)}
+html[data-theme="light"] .sidebar-card{background:rgba(246,249,255,.78)}
+html[data-theme="light"] .notice-detail,
+html[data-theme="light"] .inquiry-chat,
+html[data-theme="light"] .schedule-panel{background:rgba(255,255,255,.60)}
+html[data-theme="light"] .input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:rgba(255,255,255,.75)}
+html[data-theme="light"] .schedule-cal{background:rgba(255,255,255,.55)}
+html[data-theme="light"] .schedule-day{background:rgba(255,255,255,.45)}
+html[data-theme="light"] .schedule-day:hover{background:rgba(255,255,255,.65)}
+html[data-theme="light"] .schedule-day.out{background:rgba(255,255,255,.30)}
+
+/* KPI cards: 기존 다크 전용 흰색 텍스트를 라이트에서 정상 대비로 */
+html[data-theme="light"] .kpi-card .kpi-title{color:rgba(11,18,32,.82)}
+html[data-theme="light"] .kpi-card .kpi-main{color:var(--text)}
+html[data-theme="light"] .kpi-card .kpi-sub{color:rgba(11,18,32,.78)}
+
+/* Badges: 라이트에서 글자색/테두리 대비 개선 */
+html[data-theme="light"] .badge{color:rgba(11,18,32,.78);background:rgba(255,255,255,.55)}
+html[data-theme="light"] .badge.accent{border-color:rgba(43,98,255,.35);color:#0b1220;background:rgba(43,98,255,.12)}
+html[data-theme="light"] .badge.ok{border-color:rgba(15,157,106,.35);color:#0b1220;background:rgba(15,157,106,.10)}
+html[data-theme="light"] .badge.danger{border-color:rgba(214,60,60,.35);color:#0b1220;background:rgba(214,60,60,.10)}
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .container{max-width:1100px;margin:0 auto;padding:18px}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(16,27,51,.55);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10}
@@ -37,6 +72,52 @@ textarea{min-height:90px}
 .kpi{display:flex;gap:10px;align-items:center;justify-content:space-between}
 .kpi .value{font-size:20px;font-weight:700}
 .small{font-size:12px;color:var(--muted)}
+
+/* Schedule (calendar) */
+/* NOTE: 로그인 레이아웃은 사이드바가 있어 main 영역이 쉽게 좁아집니다.
+	좁은 폭에서 2열을 강제로 유지하면 캘린더가 찌그러지므로, 비교적 이른 구간에 1열로 접습니다. */
+.schedule-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,360px);gap:14px;align-items:start;margin-top:10px;max-width:100%}
+.schedule-calendar{min-width:0}
+
+/* 연속 격자(일반 캘린더 느낌) */
+.schedule-cal{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:rgba(7,11,20,.18)}
+.schedule-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border-bottom:1px solid var(--border)}
+.schedule-weekday{font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.02em;text-align:center;padding:10px 8px;background:rgba(232,238,252,.03)}
+.schedule-weekday:not(:last-child){border-right:1px solid var(--border)}
+
+.schedule-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;grid-auto-rows:minmax(120px,auto)}
+.schedule-day{border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0;background:rgba(232,238,252,.02);color:var(--text);padding:10px;text-align:left;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:8px;min-width:0}
+.schedule-day:nth-child(7n){border-right:0}
+.schedule-day:hover{background:rgba(232,238,252,.04)}
+.schedule-day.out{opacity:.55;background:rgba(232,238,252,.01)}
+.schedule-day.selected{background:rgba(122,162,255,.10)}
+.schedule-day.today{outline:2px solid var(--accent);outline-offset:-2px}
+.schedule-day-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.schedule-day-num{font-weight:900}
+.schedule-events{display:flex;flex-direction:column;gap:6px;min-width:0}
+.schedule-evt{display:block;width:100%;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit;cursor:pointer}
+.schedule-more{font-size:12px}
+
+.schedule-panel{border:1px solid var(--border);border-radius:14px;background:rgba(7,11,20,.20);padding:14px;min-width:0}
+.schedule-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.schedule-panel-title{font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.02em}
+.schedule-panel-section-title{margin:10px 0 8px 0;font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.02em}
+
+.schedule-event-list{display:flex;flex-direction:column;gap:8px}
+.schedule-event-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(232,238,252,.03);cursor:pointer;font:inherit;color:inherit;text-align:left}
+.schedule-event-row:hover{background:rgba(232,238,252,.05)}
+.schedule-event-row-left{display:flex;flex-direction:column;gap:6px;min-width:0}
+.schedule-event-title{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.schedule-event-meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schedule-event-row-right{font-size:12px;color:var(--muted);white-space:nowrap;margin-top:2px}
+.schedule-event-detail{padding:12px;border-radius:12px;border:1px solid var(--border);background:rgba(232,238,252,.03)}
+
+.schedule-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.schedule-actions [aria-disabled="true"]{opacity:.5;pointer-events:none}
+
+@media (max-width:1280px){
+	.schedule-layout{grid-template-columns:1fr}
+}
 
 /* Notice board (list + preview) */
 .notice-board{padding:16px}
@@ -103,10 +184,11 @@ textarea{min-height:90px}
 .auth-right-link{display:flex;justify-content:flex-end;margin-top:6px}
 
 /* Layout with sidebar (logged-in) */
-.layout{display:flex;gap:14px;max-width:1300px;margin:0 auto;padding:18px}
+/* 로그인 후 화면은 작업공간이 넓을수록 유리하므로, 고정 최대폭을 제거해 더 넓게 사용합니다. */
+.layout{display:flex;gap:14px;max-width:100%;margin:0;padding:14px}
 .sidebar{width:280px;flex:0 0 280px;border-right:1px solid var(--border);padding-right:14px}
 .main{flex:1;min-width:0}
-.layout .container{max-width:1100px;margin:0 auto;padding:0}
+.layout .container{max-width:100%;margin:0;padding:0}
 
 .sidebar-card{background:rgba(16,27,51,.70);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
 .sidebar-user-name{font-size:18px;font-weight:800;margin-bottom:6px}
@@ -149,12 +231,16 @@ textarea{min-height:90px}
 .table.table-compact th,.table.table-compact td{padding:8px 10px}
 
 /* Admin items: grouped row toggle */
-.table-toggle{border:0;background:transparent;color:var(--text);padding:0;margin:0;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;text-align:left}
+.table-toggle{border:0;background:transparent;color:var(--text);padding:0;margin:0;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;line-height:inherit}
 .table-toggle:hover{text-decoration:underline}
 .table-toggle-label{display:inline-block}
 .table-toggle-chevron{margin-left:auto;color:var(--muted);font-size:12px;transform:translateY(-1px)}
 .table-toggle-chevron::after{content:'▸'}
 .table-toggle[aria-expanded="true"] .table-toggle-chevron::after{content:'▾'}
+
+/* Table links that should look like plain text (match admin list typography) */
+.table-text-link,.table-text-link:visited{color:var(--text);text-decoration:none;font:inherit;line-height:inherit}
+.table-text-link:hover{color:var(--text);text-decoration:none}
 
 /* Sub rows for duplicated items */
 .dup-row td{background:rgba(232,238,252,.02)}
@@ -175,6 +261,8 @@ textarea{min-height:90px}
 /* Inquiry (1:1) board (list + chat) */
 .inquiry-board{padding:16px}
 .inquiry-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.inquiry-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.inquiry-tabs .btn.secondary.active{border-color:rgba(122,162,255,.45);background:rgba(122,162,255,.10)}
 .inquiry-split{display:grid;grid-template-columns:420px 1fr;gap:14px;margin-top:14px}
 .inquiry-list{min-width:0}
 .inquiry-list-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
@@ -183,7 +271,8 @@ textarea{min-height:90px}
 .inquiry-row:hover{text-decoration:none;background:rgba(232,238,252,.05)}
 .inquiry-row.active{border-color:rgba(122,162,255,.45);background:rgba(122,162,255,.10)}
 .inquiry-row-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.inquiry-title{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inquiry-title{font-weight:900;min-width:0;display:flex;align-items:center;gap:8px}
+.inquiry-title-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .inquiry-last{font-size:12px;color:var(--muted);white-space:nowrap}
 .inquiry-row-sub{margin-top:6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .inquiry-empty{padding:16px;border-radius:12px;border:1px dashed var(--border);background:rgba(232,238,252,.02)}
@@ -206,6 +295,13 @@ textarea{min-height:90px}
 
 .inquiry-chat-input{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-top:1px solid var(--border)}
 .inquiry-chat-input textarea{min-height:44px;max-height:120px;resize:vertical}
+
+/* Inquiry modal (resolve) */
+.inquiry-modal{border:0;padding:0;background:transparent}
+.inquiry-modal::backdrop{background:rgba(0,0,0,.55)}
+.inquiry-modal-card{width:min(520px, 92vw);border:1px solid var(--border);border-radius:14px;background:rgba(16,27,51,.92);padding:14px}
+.inquiry-modal-title{font-size:16px;font-weight:900;margin-bottom:10px}
+.inquiry-modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
 
 @media (max-width:980px){
   .inquiry-split{grid-template-columns:1fr}
