@@ -91,11 +91,15 @@ textarea{min-height:90px}
 .schedule-day:hover{background:rgba(232,238,252,.04)}
 .schedule-day.out{opacity:.55;background:rgba(232,238,252,.01)}
 .schedule-day.selected{background:rgba(122,162,255,.10)}
-.schedule-day.today{outline:2px solid var(--accent);outline-offset:-2px}
+.schedule-day.today{outline:0;background:rgba(122,162,255,.08)}
+.schedule-day.has-events{background:rgba(232,238,252,.03)}
 .schedule-day-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .schedule-day-num{font-weight:900}
 .schedule-events{display:flex;flex-direction:column;gap:6px;min-width:0}
-.schedule-evt{display:block;width:100%;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit;cursor:pointer}
+.schedule-evt{display:flex;align-items:center;gap:6px;width:100%;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit;cursor:pointer;border:1px solid var(--border);background:rgba(232,238,252,.03);border-radius:999px;padding:4px 8px;color:var(--text)}
+.schedule-evt:hover{background:rgba(232,238,252,.05)}
+.schedule-evt-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.schedule-day .badge{padding:2px 6px;font-size:11px;border-radius:999px}
 .schedule-more{font-size:12px}
 
 .schedule-panel{border:1px solid var(--border);border-radius:14px;background:rgba(7,11,20,.20);padding:14px;min-width:0}
@@ -114,6 +118,19 @@ textarea{min-height:90px}
 
 .schedule-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .schedule-actions [aria-disabled="true"]{opacity:.5;pointer-events:none}
+
+/* Schedule header month label */
+.kpi .schedule-actions{flex-wrap:nowrap;align-items:center}
+.schedule-ym{position:relative;display:flex;gap:8px;align-items:center}
+.schedule-ym-btn{font-weight:900}
+.schedule-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:160px;max-height:280px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:12px;background:rgba(7,11,20,.92);backdrop-filter:blur(6px);z-index:50}
+.schedule-menu#scheduleYearMenu{right:auto;left:0}
+.schedule-menu-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;padding:8px 10px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;font:inherit;text-align:left;white-space:nowrap}
+.schedule-menu-item:hover{background:rgba(232,238,252,.06);border-color:var(--border)}
+.schedule-menu-item.active{background:rgba(122,162,255,.14);border-color:rgba(122,162,255,.35)}
+
+html[data-theme="light"] .schedule-menu{background:rgba(255,255,255,.92)}
+html[data-theme="light"] .schedule-menu-item{color:#0b1220}
 
 /* Sidebar schedule widget: compact rows */
 .sidebar .schedule-grid{grid-auto-rows:minmax(56px,auto)}
