@@ -22,7 +22,9 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 2) 스키마/시드 반영
 
 - `schema.sql` 실행
+- (신규 설치 권장) `schema_latest.sql` 실행
 - `seed.sql` 실행
+- 기존 DB 업그레이드: `migrate_*.sql` 참고
 
 ### 기존 DB를 유지하고 업그레이드하는 경우(중요)
 

@@ -204,7 +204,7 @@ require_once __DIR__ . '/includes/header.php';
     </thead>
     <tbody>
     <?php if (!$pos): ?>
-      <tr><td colspan="6" class="muted">검색 결과가 없습니다.</td></tr>
+      <tr><td colspan="7" class="muted">검색 결과가 없습니다.</td></tr>
     <?php else: ?>
       <?php foreach ($pos as $po): ?>
         <?php
