@@ -93,6 +93,8 @@ if ($cssVer === false) {
 
           <a class="tree-link <?= e(nav_active('/dashboard.php', $path)) ?>" href="<?= e(url('/dashboard.php')) ?>">분석 대시보드</a>
 
+          <a class="tree-link <?= e(nav_active('/schedule.php', $path)) ?>" href="<?= e(url('/schedule.php')) ?>">일정관리</a>
+
           <details class="tree-group" open>
             <summary class="tree-summary">품목</summary>
             <div class="tree-items">
@@ -133,39 +135,6 @@ if ($cssVer === false) {
               </div>
             </details>
           <?php endif; ?>
-        </div>
-
-        <div class="sidebar-card" id="sidebarSchedule" data-api-url="<?= e(url('/api_schedule_po.php')) ?>" data-po-view-base="<?= e(url('/po_view.php')) ?>" data-receipt-view-base="<?= e(url('/receipt_view.php')) ?>">
-          <div class="schedule-panel-head" style="margin-bottom:10px">
-            <div>
-              <div class="schedule-panel-title">발주/입고 캘린더</div>
-              <div class="muted" id="sidebarScheduleMonth" style="margin-top:2px">-</div>
-            </div>
-            <div class="schedule-actions">
-              <button type="button" class="btn secondary" id="sidebarSchedulePrev" aria-label="이전 달">◀</button>
-              <button type="button" class="btn secondary" id="sidebarScheduleNext" aria-label="다음 달">▶</button>
-            </div>
-          </div>
-
-          <div class="schedule-cal" aria-label="발주 캘린더">
-            <div class="schedule-weekdays">
-              <div class="schedule-weekday">일</div>
-              <div class="schedule-weekday">월</div>
-              <div class="schedule-weekday">화</div>
-              <div class="schedule-weekday">수</div>
-              <div class="schedule-weekday">목</div>
-              <div class="schedule-weekday">금</div>
-              <div class="schedule-weekday">토</div>
-            </div>
-            <div class="schedule-grid" id="sidebarScheduleGrid"></div>
-          </div>
-
-          <div class="schedule-panel" style="margin-top:10px">
-            <div class="schedule-panel-section-title" id="sidebarScheduleDayTitle">-</div>
-            <div class="schedule-event-list" id="sidebarScheduleDayList">
-              <div class="muted">날짜를 선택하면 발주가 표시됩니다.</div>
-            </div>
-          </div>
         </div>
       </aside>
 
