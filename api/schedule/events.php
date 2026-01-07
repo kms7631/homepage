@@ -29,7 +29,7 @@ try {
   $start = schedule_events_parse_date((string)($_GET['start'] ?? ''));
   $end = schedule_events_parse_date((string)($_GET['end'] ?? ''));
   if (!$start || !$end) {
-    throw new RuntimeException('start/end(YYYY-MM-DD)가 필요합니다.');
+    throw new InvalidArgumentException('start/end(YYYY-MM-DD)가 필요합니다.');
   }
 
   // sanity: limit range (~45 days)
@@ -37,11 +37,11 @@ try {
   $ds = new DateTimeImmutable($start, $tz);
   $de = new DateTimeImmutable($end, $tz);
   if ($de < $ds) {
-    throw new RuntimeException('end는 start 이후여야 합니다.');
+    throw new InvalidArgumentException('end는 start 이후여야 합니다.');
   }
   $days = (int)$de->diff($ds)->format('%a');
   if ($days > 45) {
-    throw new RuntimeException('조회 범위가 너무 큽니다. (최대 45일)');
+    throw new InvalidArgumentException('조회 범위가 너무 큽니다. (최대 45일)');
   }
 
   $db = db();
@@ -137,5 +137,7 @@ try {
     'events' => $events,
   ]);
 } catch (Throwable $e) {
-  schedule_events_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  error_log('[API_ERROR] api/schedule/events.php ' . $e);
+  $status = ($e instanceof InvalidArgumentException) ? 400 : 500;
+  schedule_events_json(['ok' => false, 'error' => '요청 처리 중 오류가 발생했습니다.'], $status);
 }

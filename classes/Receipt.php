@@ -17,8 +17,58 @@ final class Receipt {
       throw new RuntimeException('입고 품목이 없습니다.');
     }
 
+    $incomingQtyByItemId = [];
+    foreach ($clean as $row) {
+      $itemId = (int)$row['item_id'];
+      $qty = (int)$row['qty_received'];
+      $incomingQtyByItemId[$itemId] = ($incomingQtyByItemId[$itemId] ?? 0) + $qty;
+    }
+
     $db->beginTransaction();
     try {
+      if ($purchaseOrderId && $purchaseOrderId > 0) {
+        // Lock PO row to prevent concurrent receipts and ensure consistent validation
+        $stPo = $db->prepare("SELECT id FROM purchase_orders WHERE id = ? AND supplier_id = ? AND status = 'OPEN' FOR UPDATE");
+        $stPo->execute([$purchaseOrderId, $supplierId]);
+        if (!$stPo->fetch()) {
+          throw new RuntimeException('발주 상태가 OPEN이 아니거나 접근 권한이 없습니다.');
+        }
+
+        $stOrdered = $db->prepare('SELECT poi.item_id, poi.qty
+                                  FROM purchase_order_items poi
+                                  WHERE poi.purchase_order_id = ?');
+        $stOrdered->execute([$purchaseOrderId]);
+        $orderedByItemId = [];
+        foreach (($stOrdered->fetchAll() ?: []) as $r) {
+          $orderedByItemId[(int)$r['item_id']] = (int)$r['qty'];
+        }
+        if (count($orderedByItemId) === 0) {
+          throw new RuntimeException('발주 품목이 없습니다.');
+        }
+
+        $stReceived = $db->prepare('SELECT ri.item_id, SUM(ri.qty_received) AS qty_received
+                                   FROM receipts r
+                                   JOIN receipt_items ri ON ri.receipt_id = r.id
+                                   WHERE r.purchase_order_id = ?
+                                   GROUP BY ri.item_id');
+        $stReceived->execute([$purchaseOrderId]);
+        $receivedByItemId = [];
+        foreach (($stReceived->fetchAll() ?: []) as $r) {
+          $receivedByItemId[(int)$r['item_id']] = (int)($r['qty_received'] ?? 0);
+        }
+
+        foreach ($incomingQtyByItemId as $itemId => $incomingQty) {
+          $orderedQty = (int)($orderedByItemId[$itemId] ?? 0);
+          if ($orderedQty <= 0) {
+            throw new RuntimeException('발주에 없는 품목이 포함되어 있습니다.');
+          }
+          $alreadyReceivedQty = (int)($receivedByItemId[$itemId] ?? 0);
+          if (($alreadyReceivedQty + $incomingQty) > $orderedQty) {
+            throw new RuntimeException('초과 입고입니다. 발주 수량을 초과할 수 없습니다.');
+          }
+        }
+      }
+
       $receiptNo = self::generateNo('RC');
       $st = $db->prepare('INSERT INTO receipts (receipt_no, purchase_order_id, supplier_id, received_by, receipt_date, notes)
                           VALUES (?, ?, ?, ?, ?, ?)');

@@ -130,5 +130,7 @@ try {
     'rows' => $rows,
   ]);
 } catch (Throwable $e) {
-  dashboard_json(['ok' => false, 'error' => $e->getMessage()], 500);
+  error_log('[API_ERROR] api_dashboard_list.php ' . $e->getMessage());
+  $status = ($e instanceof InvalidArgumentException) ? 400 : 500;
+  dashboard_json(['ok' => false, 'error' => '요청 처리 중 오류가 발생했습니다.'], $status);
 }
