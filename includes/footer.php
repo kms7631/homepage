@@ -146,7 +146,7 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
       function renderDayList(dateStr) {
         state.selected = dateStr;
         if (dayTitle) {
-          dayTitle.textContent = formatKoreanDateStr(dateStr) + ' 발주';
+          dayTitle.textContent = formatKoreanDateStr(dateStr) + ' 발주/입고';
         }
         if (!dayList) return;
         clearNode(dayList);
