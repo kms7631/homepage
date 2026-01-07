@@ -58,24 +58,68 @@ try {
   $limitDay = 200;
 
   if ($date !== null) {
-    $where = ["po.order_date = ?", "po.status <> 'CANCELLED'"];
-    $params = [$date];
+    // day detail: purchase orders + receipts
+    $events = [];
 
+    $wherePo = ["po.order_date = ?", "po.status <> 'CANCELLED'"];
+    $paramsPo = [$date];
     if ($supplierId > 0) {
-      $where[] = 'po.supplier_id = ?';
-      $params[] = $supplierId;
+      $wherePo[] = 'po.supplier_id = ?';
+      $paramsPo[] = $supplierId;
     }
 
-    $sql = 'SELECT po.id, po.po_no, po.status, po.order_date, sp.name AS supplier_name
-            FROM purchase_orders po
-            JOIN suppliers sp ON sp.id = po.supplier_id
-            WHERE ' . implode(' AND ', $where) . '
-            ORDER BY po.id DESC
-            LIMIT ' . (int)$limitDay;
+    $sqlPo = 'SELECT po.id, po.po_no, po.status, po.order_date, sp.name AS supplier_name
+              FROM purchase_orders po
+              JOIN suppliers sp ON sp.id = po.supplier_id
+              WHERE ' . implode(' AND ', $wherePo) . '
+              ORDER BY po.id DESC
+              LIMIT ' . (int)$limitDay;
+    $st = $db->prepare($sqlPo);
+    $st->execute($paramsPo);
+    foreach (($st->fetchAll() ?: []) as $r) {
+      $events[] = [
+        'type' => 'po',
+        'id' => (int)($r['id'] ?? 0),
+        'po_no' => (string)($r['po_no'] ?? ''),
+        'status' => (string)($r['status'] ?? ''),
+        'supplier_name' => (string)($r['supplier_name'] ?? ''),
+      ];
+    }
 
-    $st = $db->prepare($sql);
-    $st->execute($params);
-    $rows = $st->fetchAll();
+    $whereRc = ['r.receipt_date = ?'];
+    $paramsRc = [$date];
+    if ($supplierId > 0) {
+      $whereRc[] = 'r.supplier_id = ?';
+      $paramsRc[] = $supplierId;
+    }
+
+    $sqlRc = 'SELECT r.id, r.receipt_no, r.receipt_date, r.purchase_order_id, sp.name AS supplier_name
+              FROM receipts r
+              JOIN suppliers sp ON sp.id = r.supplier_id
+              WHERE ' . implode(' AND ', $whereRc) . '
+              ORDER BY r.id DESC
+              LIMIT ' . (int)$limitDay;
+    $st = $db->prepare($sqlRc);
+    $st->execute($paramsRc);
+    foreach (($st->fetchAll() ?: []) as $r) {
+      $events[] = [
+        'type' => 'receipt',
+        'id' => (int)($r['id'] ?? 0),
+        'receipt_no' => (string)($r['receipt_no'] ?? ''),
+        'purchase_order_id' => (int)($r['purchase_order_id'] ?? 0),
+        'supplier_name' => (string)($r['supplier_name'] ?? ''),
+      ];
+    }
+
+    usort($events, function (array $a, array $b): int {
+      $ta = (string)($a['type'] ?? '');
+      $tb = (string)($b['type'] ?? '');
+      if ($ta !== $tb) {
+        // PO first, then receipts
+        return ($ta === 'po' ? -1 : 1);
+      }
+      return ((int)($b['id'] ?? 0)) <=> ((int)($a['id'] ?? 0));
+    });
 
     schedule_json([
       'ok' => true,
@@ -85,7 +129,7 @@ try {
         'is_admin' => is_admin(),
         'supplier_id' => $supplierId,
       ],
-      'rows' => $rows,
+      'events' => $events,
     ]);
   }
 
@@ -110,6 +154,7 @@ try {
   $rows = $st->fetchAll();
 
   $byDate = [];
+
   foreach ($rows as $r) {
     $d = (string)($r['order_date'] ?? '');
     if ($d === '') {
@@ -119,11 +164,59 @@ try {
       $byDate[$d] = [];
     }
     $byDate[$d][] = [
+      'type' => 'po',
       'id' => (int)($r['id'] ?? 0),
       'po_no' => (string)($r['po_no'] ?? ''),
       'status' => (string)($r['status'] ?? ''),
       'supplier_name' => (string)($r['supplier_name'] ?? ''),
     ];
+  }
+
+  // receipts for the month
+  $whereRc = ['r.receipt_date >= ?', 'r.receipt_date <= ?'];
+  $paramsRc = [$monthInfo['from'], $monthInfo['to']];
+  if ($supplierId > 0) {
+    $whereRc[] = 'r.supplier_id = ?';
+    $paramsRc[] = $supplierId;
+  }
+
+  $sqlRc = 'SELECT r.id, r.receipt_no, r.receipt_date, r.purchase_order_id, sp.name AS supplier_name
+            FROM receipts r
+            JOIN suppliers sp ON sp.id = r.supplier_id
+            WHERE ' . implode(' AND ', $whereRc) . '
+            ORDER BY r.receipt_date ASC, r.id ASC
+            LIMIT ' . (int)$limitMonth;
+  $st = $db->prepare($sqlRc);
+  $st->execute($paramsRc);
+  $rcRows = $st->fetchAll();
+
+  foreach (($rcRows ?: []) as $r) {
+    $d = (string)($r['receipt_date'] ?? '');
+    if ($d === '') {
+      continue;
+    }
+    if (!isset($byDate[$d])) {
+      $byDate[$d] = [];
+    }
+    $byDate[$d][] = [
+      'type' => 'receipt',
+      'id' => (int)($r['id'] ?? 0),
+      'receipt_no' => (string)($r['receipt_no'] ?? ''),
+      'purchase_order_id' => (int)($r['purchase_order_id'] ?? 0),
+      'supplier_name' => (string)($r['supplier_name'] ?? ''),
+    ];
+  }
+
+  foreach ($byDate as $d => $arr) {
+    usort($arr, function (array $a, array $b): int {
+      $ta = (string)($a['type'] ?? '');
+      $tb = (string)($b['type'] ?? '');
+      if ($ta !== $tb) {
+        return ($ta === 'po' ? -1 : 1);
+      }
+      return ((int)($a['id'] ?? 0)) <=> ((int)($b['id'] ?? 0));
+    });
+    $byDate[$d] = $arr;
   }
 
   schedule_json([
@@ -139,7 +232,7 @@ try {
     'days' => $byDate,
     'meta' => [
       'limit_month' => $limitMonth,
-      'returned_rows' => count($rows),
+      'returned_rows' => count($rows) + count($rcRows ?: []),
     ],
   ]);
 } catch (Throwable $e) {

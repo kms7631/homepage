@@ -60,6 +60,7 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
 
       var apiUrl = root.getAttribute('data-api-url') || '';
       var poViewBase = root.getAttribute('data-po-view-base') || '';
+      var receiptViewBase = root.getAttribute('data-receipt-view-base') || '';
       if (!apiUrl) return;
 
       var monthLabel = document.getElementById('sidebarScheduleMonth');
@@ -101,6 +102,47 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
         while (n.firstChild) n.removeChild(n.firstChild);
       }
 
+      function eventType(evt) {
+        var t = evt && evt.type ? String(evt.type) : '';
+        if (t) return t;
+        // backwards compatibility
+        if (evt && (evt.po_no || evt.status)) return 'po';
+        if (evt && evt.receipt_no) return 'receipt';
+        return 'po';
+      }
+
+      function eventTitle(evt) {
+        var t = eventType(evt);
+        if (t === 'receipt') {
+          return (evt.receipt_no ? String(evt.receipt_no) : ('입고 #' + String(evt.id || '')));
+        }
+        return (evt.po_no ? String(evt.po_no) : ('발주 #' + String(evt.id || '')));
+      }
+
+      function eventMeta(evt) {
+        var t = eventType(evt);
+        var s = evt && evt.supplier_name ? String(evt.supplier_name) : '';
+        var status = '';
+        if (t === 'receipt') {
+          status = '입고확인';
+        } else {
+          status = evt && evt.status ? String(evt.status) : '';
+        }
+        return (s ? (s + ' · ') : '') + status;
+      }
+
+      function eventHref(evt) {
+        var t = eventType(evt);
+        var id = evt && evt.id ? String(evt.id) : '';
+        if (!id) return '#';
+        if (t === 'receipt') {
+          var base = receiptViewBase || '/receipt_view.php';
+          return base + '?id=' + encodeURIComponent(id);
+        }
+        var base = poViewBase || '/po_view.php';
+        return base + '?id=' + encodeURIComponent(id);
+      }
+
       function renderDayList(dateStr) {
         state.selected = dateStr;
         if (dayTitle) {
@@ -118,21 +160,21 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
           return;
         }
 
-        rows.slice(0, 10).forEach(function (po) {
+        rows.slice(0, 10).forEach(function (evt) {
           var a = document.createElement('a');
           a.className = 'schedule-event-row';
-          a.href = poViewBase ? (poViewBase + '?id=' + encodeURIComponent(String(po.id))) : ('/po_view.php?id=' + encodeURIComponent(String(po.id)));
+          a.href = eventHref(evt);
 
           var left = document.createElement('div');
           left.className = 'schedule-event-row-left';
 
           var title = document.createElement('div');
           title.className = 'schedule-event-title';
-          title.textContent = po.po_no || ('발주 #' + String(po.id));
+          title.textContent = eventTitle(evt);
 
           var meta = document.createElement('div');
           meta.className = 'schedule-event-meta';
-          meta.textContent = (po.supplier_name ? (po.supplier_name + ' · ') : '') + (po.status || '');
+          meta.textContent = eventMeta(evt);
 
           left.appendChild(title);
           left.appendChild(meta);
@@ -193,10 +235,11 @@ $isAuthPage = (defined('LAYOUT_AUTH_PAGE') && LAYOUT_AUTH_PAGE);
           events.className = 'schedule-events';
           var rows = state.monthDays[dateStr] || [];
           if (rows.length) {
-            rows.slice(0, 2).forEach(function (po) {
+            rows.slice(0, 2).forEach(function (evt) {
               var e = document.createElement('div');
               e.className = 'schedule-evt muted';
-              e.textContent = po.po_no || ('발주 #' + String(po.id));
+              var t = eventType(evt);
+              e.textContent = (t === 'receipt' ? '입고 ' : '') + eventTitle(evt);
               events.appendChild(e);
             });
             if (rows.length > 2) {

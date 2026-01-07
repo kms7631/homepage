@@ -135,7 +135,7 @@ if ($cssVer === false) {
           <?php endif; ?>
         </div>
 
-        <div class="sidebar-card" id="sidebarSchedule" data-api-url="<?= e(url('/api_schedule_po.php')) ?>" data-po-view-base="<?= e(url('/po_view.php')) ?>">
+        <div class="sidebar-card" id="sidebarSchedule" data-api-url="<?= e(url('/api_schedule_po.php')) ?>" data-po-view-base="<?= e(url('/po_view.php')) ?>" data-receipt-view-base="<?= e(url('/receipt_view.php')) ?>">
           <div class="schedule-panel-head" style="margin-bottom:10px">
             <div>
               <div class="schedule-panel-title">발주 캘린더</div>
