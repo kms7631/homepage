@@ -5,10 +5,12 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 ## 구성
 
 - 대시보드: 부족 품목 TOP 5, 최근 발주 5건, 최근 입고 5건
+- 분석 대시보드: 기간별 발주/입고 현황(KPI + 차트) 및 드릴다운 리스트(/dashboard.php)
 - 품목 조회 → 부족 품목 식별 → 발주 등록 → 발주 조회 → 입고 처리 → 재고 반영
 - role 기반 접근 제어(user/admin)
 - 발주 생성/입고 처리는 트랜잭션 처리
 - (추가) 사용자 → 거래처 소속(supplier_id) 기반 데이터 제한(일반 사용자)
+ - (추가) 라이트/다크 모드 토글(UI 테마 저장: localStorage)
 
 ## 설치/실행
 
@@ -83,6 +85,27 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 8) 품목 상세에서 재고 증가 확인
    - /item_view.php
 
+## 분석 대시보드
+
+- 화면: `/dashboard.php`
+   - 기간(range)별 발주/입고 요약(KPI) + 차트(도넛/막대) + 하단 근거 리스트 드릴다운
+   - 관리자(admin): 전체/거래처 선택 가능
+   - 일반 사용자(vendor): 항상 본인 거래처 데이터만 노출(supplier_id 강제)
+- API(내부 호출)
+   - `/api_dashboard_summary.php` : KPI + 도넛 데이터
+   - `/api_dashboard_bar.php` : 막대 그래프 데이터(admin: 거래처 TOP / vendor: 품목 TOP)
+   - `/api_dashboard_list.php` : 드릴다운 근거 리스트
+- 주요 쿼리 파라미터
+   - `range`: `7d` | `30d` | `thisMonth` | `lastMonth`
+   - `supplier_id`: 관리자만 의미 있음(일반 사용자는 무시됨)
+   - `status`: `complete` | `partial` | `none` (드릴다운)
+   - `item_id`: 품목 드릴다운
+
+## UI 테마(라이트/다크)
+
+- 상단바의 “라이트 모드/다크 모드” 버튼으로 테마를 토글합니다.
+- 선택값은 `localStorage.theme`에 저장되며, 라이트 모드는 옅은 파랑 톤이 섞인 배경 팔레트로 적용됩니다.
+
 ## 프로필(회원정보 수정)
 
 - /profile.php
@@ -100,6 +123,10 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 - TC-008 입고 처리 트랜잭션: receipts + receipt_items + inventory 증가가 함께 반영되는지 확인
 - TC-009 대시보드: 부족 TOP5/최근 발주/최근 입고가 표시되는지 확인
 - TC-010 XSS 방지: 테이블/상세 출력이 e(htmlspecialchars) 처리되는지 확인
+
+추가 테스트 시나리오 문서:
+
+- `DASHBOARD_TEST_SCENARIOS.md`
 
 ## 복수 품목 발주(카트형) 테스트 시나리오
 
