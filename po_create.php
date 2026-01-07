@@ -48,6 +48,25 @@ if (is_post() && $action !== '') {
     }
 
     if ($action === 'add') {
+      // 다른 품목을 추가할 때도, 현재 입력해 둔 qty[]를 함께 받아 카트 수량을 먼저 반영한다.
+      // ("수량 반영"을 매번 누르지 않아도 입력값이 유지되도록)
+      $qtys = $_POST['qty'] ?? [];
+      if (is_array($qtys)) {
+        $cart = $_SESSION['po_cart'];
+        foreach ($qtys as $itemIdStr => $qtyVal) {
+          $existingItemId = (int)$itemIdStr;
+          if (!isset($cart[$existingItemId])) {
+            continue;
+          }
+          $qty = (int)$qtyVal;
+          if ($qty < 1) {
+            throw new RuntimeException('수량은 1 이상이어야 합니다.');
+          }
+          $cart[$existingItemId] = $qty;
+        }
+        $_SESSION['po_cart'] = $cart;
+      }
+
       $itemId = (int)($_POST['item_id'] ?? 0);
       if ($itemId <= 0) {
         throw new RuntimeException('추가할 품목이 올바르지 않습니다.');
@@ -394,7 +413,7 @@ require_once __DIR__ . '/includes/header.php';
       <div class="kpi">
         <div>
           <h2 class="h1" style="margin-bottom:4px">발주 카트</h2>
-          <div class="muted">수량 변경/제거 후 “발주 제출”로 한 번에 저장합니다.</div>
+          <div class="muted">여러 품목을 추가한 뒤 수량을 입력하고 한 번에 반영/제출할 수 있습니다.</div>
         </div>
         <div>
           <span class="badge">총 품목 수: <?= e((string)count($cart)) ?></span>
@@ -451,15 +470,51 @@ require_once __DIR__ . '/includes/header.php';
               <input class="input" type="text" name="notes" value="<?= e($notes) ?>" placeholder="예: 긴급" />
             </div>
             <div class="field" style="display:flex;gap:8px;align-items:flex-end">
-              <button class="btn secondary" type="submit" name="action" value="update">수량 반영</button>
+              <button class="btn secondary" type="submit" name="action" value="update">수량 일괄 반영</button>
               <button class="btn" type="submit" name="action" value="submit">발주 제출</button>
             </div>
           </div>
-          <div class="small" style="margin-top:10px">수량을 수정한 뒤 바로 “발주 제출”을 눌러도 입력한 수량이 반영됩니다.</div>
+          <div class="small" style="margin-top:10px">수량을 수정한 뒤 다른 품목을 “추가”해도 입력한 수량이 유지됩니다. 바로 “발주 제출”을 눌러도 반영됩니다.</div>
         </form>
       <?php endif; ?>
     </div>
   <?php endif; ?>
 </div>
+
+<script>
+(function(){
+  // 검색/부족 리스트의 "추가" 버튼을 눌렀을 때, 현재 카트의 qty 입력값을 함께 전송해 유지되도록 한다.
+  const addForms = document.querySelectorAll('form input[name="action"][value="add"]');
+  if (!addForms || addForms.length === 0) return;
+
+  function cartQtyInputs(){
+    return Array.prototype.slice.call(document.querySelectorAll('input[name^="qty["]'));
+  }
+
+  addForms.forEach(function(actionInput){
+    const form = actionInput.form;
+    if (!form) return;
+
+    form.addEventListener('submit', function(){
+      const qtyInputs = cartQtyInputs();
+      if (!qtyInputs.length) return;
+
+      // 중복 방지: 이전에 주입한 hidden 필드는 제거
+      Array.prototype.slice.call(form.querySelectorAll('input[data-po-cart-qty="1"]')).forEach(function(n){
+        n.parentNode && n.parentNode.removeChild(n);
+      });
+
+      qtyInputs.forEach(function(inp){
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = inp.name;
+        hidden.value = inp.value;
+        hidden.setAttribute('data-po-cart-qty', '1');
+        form.appendChild(hidden);
+      });
+    }, { capture: true });
+  });
+})();
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
