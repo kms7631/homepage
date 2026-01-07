@@ -6,6 +6,7 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 
 - 대시보드: 부족 품목 TOP 5, 최근 발주 5건, 최근 입고 5건
 - 분석 대시보드: 기간별 발주/입고 현황(KPI + 차트) 및 드릴다운 리스트(/dashboard.php)
+- 일정관리(캘린더): 발주 신청일/입고완료일을 월간 캘린더로 조회(/schedule.php)
 - 품목 조회 → 부족 품목 식별 → 발주 등록 → 발주 조회 → 입고 처리 → 재고 반영
 - role 기반 접근 제어(user/admin)
 - 발주 생성/입고 처리는 트랜잭션 처리
@@ -34,6 +35,7 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 - (추가) 1:1 문의 기능을 사용하려면 `migrate_add_inquiries.sql` 실행
 - (추가) 1:1 문의 답변 기능을 사용하려면 `migrate_add_inquiry_messages.sql` 실행
 - (추가) 동일 SKU를 거래처별로 사용하려면 `migrate_adjust_items_sku_unique.sql` 실행
+- (추가) 일정관리(캘린더) 조회 성능을 올리려면 `migrate_add_schedule_indexes.sql` 실행
 
 3) DB 접속 정보 설정
 
@@ -105,6 +107,19 @@ Apache + PHP 7.4 + MySQL 8.0 + PDO 기반 예제 프로젝트입니다.
 
 - 상단바의 “라이트 모드/다크 모드” 버튼으로 테마를 토글합니다.
 - 선택값은 `localStorage.theme`에 저장되며, 라이트 모드는 옅은 파랑 톤이 섞인 배경 팔레트로 적용됩니다.
+
+## 일정관리(캘린더)
+
+- 화면: `/schedule.php`
+   - 발주 신청일: `purchase_orders.created_at` 기준
+   - 입고완료일: `receipts.created_at` 기준(현재 스키마에 `received_at` 컬럼이 없으므로)
+   - 일반 사용자(vendor): 본인 거래처 데이터만 노출(supplier_id 강제)
+   - 이벤트 선택 시 빠른 이동
+      - 발주: 발주 상세(/po_view.php) + 입고등록(/receipt_create.php)
+      - 입고: 입고 상세(/receipt_view.php)
+- API(내부 호출)
+   - `/api_schedule_events.php?start=YYYY-MM-DD&end=YYYY-MM-DD`
+      - start/end 범위 기반으로 발주/입고 이벤트를 반환합니다(최대 45일 제한).
 
 ## 프로필(회원정보 수정)
 
