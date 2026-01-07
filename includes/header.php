@@ -27,6 +27,20 @@ if ($cssVer === false) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= e(APP_NAME) ?></title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else if (t === 'dark') {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="<?= e(url('/assets/app.css?v=' . (string)$cssVer)) ?>" />
   <?php if (isset($extraHeadHtml) && is_string($extraHeadHtml) && $extraHeadHtml !== ''): ?>
     <?= $extraHeadHtml ?>
@@ -41,6 +55,7 @@ if ($cssVer === false) {
         <a class="<?= e(nav_active('/items.php', $path)) ?>" href="<?= e(url('/items.php')) ?>">품목</a>
         <a class="<?= e(nav_active('/po', $path)) ?>" href="<?= e(url('/po_list.php')) ?>">발주</a>
         <a class="<?= e(nav_active('/receipt', $path)) ?>" href="<?= e(url('/receipt_list.php')) ?>">입고</a>
+        <button type="button" class="btn secondary js-theme-toggle">라이트 모드</button>
         <?php if (!$me): ?>
           <a class="<?= e(nav_active('/login.php', $path)) ?>" href="<?= e(url('/login.php')) ?>">로그인</a>
           <a class="<?= e(nav_active('/register.php', $path)) ?>" href="<?= e(url('/register.php')) ?>">회원가입</a>
@@ -75,6 +90,8 @@ if ($cssVer === false) {
           <a class="tree-link <?= e(nav_active('/notice', $path)) ?>" href="<?= e(url('/notice.php')) ?>">공지사항</a>
 
           <a class="tree-link <?= e(nav_active('/inquiry', $path)) ?>" href="<?= e(url('/inquiry_list.php')) ?>">1:1 문의</a>
+
+          <a class="tree-link <?= e(nav_active('/dashboard.php', $path)) ?>" href="<?= e(url('/dashboard.php')) ?>">분석 대시보드</a>
 
           <details class="tree-group" open>
             <summary class="tree-summary">품목</summary>
