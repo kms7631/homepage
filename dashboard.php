@@ -233,6 +233,16 @@ require_once __DIR__ . '/includes/header.php';
     return (Math.round(v * 10) / 10).toFixed(1);
   }
 
+  function wrapAxisLabel(s, maxLen = 10){
+    const str = String(s ?? '').trim();
+    if (str.length <= maxLen) return str;
+    const line1 = str.slice(0, maxLen);
+    const rest = str.slice(maxLen);
+    if (rest.length <= maxLen) return [line1, rest];
+    const line2 = rest.slice(0, Math.max(1, maxLen - 1)) + '…';
+    return [line1, line2];
+  }
+
   let donutChart = null;
   let barChart = null;
 
@@ -321,6 +331,8 @@ require_once __DIR__ . '/includes/header.php';
     const ids = bar.ids || [];
     const metric = bar.metric || '';
 
+    const shouldAutoSkipX = labels.length > 8;
+
     const title = isAdmin ? '거래처별 입고율 TOP' : '내 발주 품목 TOP';
     document.getElementById('barTitle').textContent = title;
 
@@ -338,16 +350,20 @@ require_once __DIR__ . '/includes/header.php';
       responsive: true,
       maintainAspectRatio: false,
       layout: {
-        padding: { top: 8, right: 8, bottom: 6, left: 8 }
+        padding: { top: 8, right: 8, bottom: 14, left: 8 }
       },
       scales: {
         x: {
           ticks: {
             color: colors.text,
             maxRotation: 0,
-            autoSkip: false,
+            autoSkip: shouldAutoSkipX,
+            maxTicksLimit: shouldAutoSkipX ? 8 : undefined,
             padding: 6,
-            font: { size: 12, weight: '600' }
+            font: { size: 12, weight: '600' },
+            callback: function (value) {
+              return wrapAxisLabel(this.getLabelForValue(value), 10);
+            },
           },
           grid: { color: 'rgba(232,238,252,.08)'}
         },
@@ -391,6 +407,13 @@ require_once __DIR__ . '/includes/header.php';
     if (barChart) {
       barChart.data.labels = labels;
       barChart.data.datasets[0].data = values;
+      if (barChart.options && barChart.options.scales && barChart.options.scales.x && barChart.options.scales.x.ticks) {
+        barChart.options.scales.x.ticks.autoSkip = shouldAutoSkipX;
+        barChart.options.scales.x.ticks.maxTicksLimit = shouldAutoSkipX ? 8 : undefined;
+        barChart.options.scales.x.ticks.callback = function (value) {
+          return wrapAxisLabel(this.getLabelForValue(value), 10);
+        };
+      }
       barChart.update();
       barChart.$_ids = ids;
       barChart.$_metric = metric;
