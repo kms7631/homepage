@@ -34,9 +34,10 @@ final class Receipt {
           throw new RuntimeException('발주 상태가 OPEN이 아니거나 접근 권한이 없습니다.');
         }
 
-        $stOrdered = $db->prepare('SELECT poi.item_id, poi.qty
+        $stOrdered = $db->prepare('SELECT poi.item_id, SUM(poi.qty) AS qty
                                   FROM purchase_order_items poi
-                                  WHERE poi.purchase_order_id = ?');
+                                  WHERE poi.purchase_order_id = ?
+                                  GROUP BY poi.item_id');
         $stOrdered->execute([$purchaseOrderId]);
         $orderedByItemId = [];
         foreach (($stOrdered->fetchAll() ?: []) as $r) {
@@ -90,12 +91,46 @@ final class Receipt {
         Inventory::adjust($db, $row['item_id'], $row['qty_received']);
       }
 
-      // 단순화: PO 연결 입고는 완료 상태로 처리 (UI에서는 DONE으로 표시)
+      // PO 연동 입고는 '완납(누적입고 >= 발주수량)'일 때만 RECEIVED로 변경
+      // - 완납이 아니면 발주 상태를 절대 변경하지 않는다.
+      // - purchase_order_id 없는 입고는 발주 상태에 영향 없음.
       if ($purchaseOrderId && $purchaseOrderId > 0) {
-        $stUp = $db->prepare("UPDATE purchase_orders SET status='RECEIVED' WHERE id = ? AND supplier_id = ? AND status='OPEN'");
-        $stUp->execute([$purchaseOrderId, $supplierId]);
-        if ($stUp->rowCount() !== 1) {
-          throw new RuntimeException('발주 상태가 OPEN이 아니거나 접근 권한이 없습니다.');
+        $stOrderedSum = $db->prepare('SELECT poi.item_id, SUM(poi.qty) AS ordered_qty
+                                     FROM purchase_order_items poi
+                                     WHERE poi.purchase_order_id = ?
+                                     GROUP BY poi.item_id');
+        $stOrderedSum->execute([$purchaseOrderId]);
+        $orderedQtyByItemId = [];
+        foreach (($stOrderedSum->fetchAll() ?: []) as $r) {
+          $orderedQtyByItemId[(int)$r['item_id']] = (int)($r['ordered_qty'] ?? 0);
+        }
+
+        $stReceivedSum = $db->prepare('SELECT ri.item_id, SUM(ri.qty_received) AS received_qty
+                                      FROM receipts r
+                                      JOIN receipt_items ri ON ri.receipt_id = r.id
+                                      WHERE r.purchase_order_id = ?
+                                      GROUP BY ri.item_id');
+        $stReceivedSum->execute([$purchaseOrderId]);
+        $receivedQtyByItemId = [];
+        foreach (($stReceivedSum->fetchAll() ?: []) as $r) {
+          $receivedQtyByItemId[(int)$r['item_id']] = (int)($r['received_qty'] ?? 0);
+        }
+
+        $complete = count($orderedQtyByItemId) > 0;
+        foreach ($orderedQtyByItemId as $itemId => $orderedQty) {
+          $receivedQty = (int)($receivedQtyByItemId[$itemId] ?? 0);
+          if ($receivedQty < (int)$orderedQty) {
+            $complete = false;
+            break;
+          }
+        }
+
+        if ($complete) {
+          $stUp = $db->prepare("UPDATE purchase_orders SET status='RECEIVED' WHERE id = ? AND supplier_id = ? AND status='OPEN'");
+          $stUp->execute([$purchaseOrderId, $supplierId]);
+          if ($stUp->rowCount() !== 1) {
+            throw new RuntimeException('발주 상태가 OPEN이 아니거나 접근 권한이 없습니다.');
+          }
         }
       }
 
