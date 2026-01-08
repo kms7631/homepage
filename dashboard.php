@@ -235,11 +235,21 @@ require_once __DIR__ . '/includes/header.php';
 
   function wrapAxisLabel(s, maxLen = 10){
     const str = String(s ?? '').trim();
+    if (str.includes(' ')) {
+      const parts = str.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        const first = parts[0];
+        const rest = parts.slice(1).join(' ');
+        const firstLine = first.length <= maxLen ? first : (first.slice(0, Math.max(1, maxLen - 1)) + '...');
+        const restLine = rest.length <= maxLen ? rest : (rest.slice(0, Math.max(1, maxLen - 1)) + '...');
+        return [firstLine, restLine];
+      }
+    }
     if (str.length <= maxLen) return str;
     const line1 = str.slice(0, maxLen);
     const rest = str.slice(maxLen);
     if (rest.length <= maxLen) return [line1, rest];
-    const line2 = rest.slice(0, Math.max(1, maxLen - 1)) + '…';
+    const line2 = rest.slice(0, Math.max(1, maxLen - 1)) + '...';
     return [line1, line2];
   }
 
@@ -331,7 +341,8 @@ require_once __DIR__ . '/includes/header.php';
     const ids = bar.ids || [];
     const metric = bar.metric || '';
 
-    const shouldAutoSkipX = labels.length > 8;
+    // 라벨이 길더라도 개수가 적으면 전부 표시(누락 방지). 개수가 많을 때만 자동 스킵.
+    const shouldAutoSkipX = labels.length > 10;
 
     const title = isAdmin ? '거래처별 입고율 TOP' : '내 발주 품목 TOP';
     document.getElementById('barTitle').textContent = title;
@@ -358,11 +369,12 @@ require_once __DIR__ . '/includes/header.php';
             color: colors.text,
             maxRotation: 0,
             autoSkip: shouldAutoSkipX,
+            autoSkipPadding: shouldAutoSkipX ? 18 : 0,
             maxTicksLimit: shouldAutoSkipX ? 8 : undefined,
-            padding: 6,
+            padding: 10,
             font: { size: 12, weight: '600' },
             callback: function (value) {
-              return wrapAxisLabel(this.getLabelForValue(value), 10);
+              return wrapAxisLabel(this.getLabelForValue(value), 8);
             },
           },
           grid: { color: 'rgba(232,238,252,.08)'}
@@ -382,10 +394,10 @@ require_once __DIR__ . '/includes/header.php';
       datasets: {
         bar: {
           borderRadius: 8,
-          barThickness: 38,
-          maxBarThickness: 48,
-          categoryPercentage: 0.7,
-          barPercentage: 0.9,
+          barThickness: 30,
+          maxBarThickness: 40,
+          categoryPercentage: 0.6,
+          barPercentage: 0.8,
         }
       },
       onClick: (evt, elements) => {
@@ -409,9 +421,11 @@ require_once __DIR__ . '/includes/header.php';
       barChart.data.datasets[0].data = values;
       if (barChart.options && barChart.options.scales && barChart.options.scales.x && barChart.options.scales.x.ticks) {
         barChart.options.scales.x.ticks.autoSkip = shouldAutoSkipX;
+        barChart.options.scales.x.ticks.autoSkipPadding = shouldAutoSkipX ? 18 : 0;
         barChart.options.scales.x.ticks.maxTicksLimit = shouldAutoSkipX ? 8 : undefined;
+        barChart.options.scales.x.ticks.padding = 10;
         barChart.options.scales.x.ticks.callback = function (value) {
-          return wrapAxisLabel(this.getLabelForValue(value), 10);
+          return wrapAxisLabel(this.getLabelForValue(value), 8);
         };
       }
       barChart.update();
